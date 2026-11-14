@@ -1,81 +1,254 @@
 package com.sudes.purwodadi
 
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.text.style.TextAlign
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.core.content.ContextCompat
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.sudes.purwodadi.ui.theme.*
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-// Fungsi helper unik untuk tanggal hari ini pada Surat Keterangan Tidak Mampu
+// Fungsi helper format tanggal Indonesia khusus SKTM
 fun getSktmDateFormatted(): String {
-    val currentDate = LocalDate.now()
-    val formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("id", "ID"))
-    return currentDate.format(formatter)
+    val sdf = SimpleDateFormat("dd MMMM yyyy, HH:mm 'WIB'", Locale("id", "ID"))
+    return sdf.format(Date())
+}
+
+// Fungsi helper: Menyalin file ke direktori internal permanen
+fun saveFilePermanentlySktm(context: Context, sourceUri: Uri): Uri? {
+    return try {
+        val inputStream: InputStream? = context.contentResolver.openInputStream(sourceUri)
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val permanentDir = File(context.filesDir, "surat_pengantar_sktm").apply {
+            if (!exists()) mkdirs()
+        }
+        val permanentFile = File(permanentDir, "SKTM_${timeStamp}.jpg")
+
+        val outputStream = FileOutputStream(permanentFile)
+        inputStream?.copyTo(outputStream)
+        inputStream?.close()
+        outputStream.close()
+
+        Uri.fromFile(permanentFile)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+// Fungsi helper pembuat file sementara kamera
+fun createSktmImageFile(context: Context): File {
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+}
+
+// Fungsi helper untuk menyimpan draft sementara ke SharedPreferences
+fun saveDraftSuratSktm(
+    context: Context,
+    nama: String,
+    nik: String,
+    ttl: String,
+    jk: String,
+    agama: String,
+    statusPerkawinan: String,
+    pekerjaan: String,
+    alamat: String,
+    nomorKK: String,
+    namaKK: String,
+    keperluan: String,
+    uriString: String
+) {
+    val prefs = context.getSharedPreferences("DraftSuratSktmPrefs", Context.MODE_PRIVATE)
+    prefs.edit().apply {
+        putString("nama", nama)
+        putString("nik", nik)
+        putString("ttl", ttl)
+        putString("jk", jk)
+        putString("agama", agama)
+        putString("statusPerkawinan", statusPerkawinan)
+        putString("pekerjaan", pekerjaan)
+        putString("alamat", alamat)
+        putString("nomorKK", nomorKK)
+        putString("namaKK", namaKK)
+        putString("keperluan", keperluan)
+        putString("pengantarUri", uriString)
+        apply()
+    }
+}
+
+// Fungsi helper untuk menghapus draft jika pengajuan sukses
+fun clearDraftSuratSktm(context: Context) {
+    val prefs = context.getSharedPreferences("DraftSuratSktmPrefs", Context.MODE_PRIVATE)
+    prefs.edit().clear().apply()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuratTidakMampuScreen(
+    initialNama: String = "",
+    initialNik: String = "",
+    initialTempatTgl: String = "",
+    initialAgama: String = "",
+    initialStatusPerkawinan: String = "",
+    initialPekerjaan: String = "",
+    initialAlamat: String = "",
+    existingItem: PengajuanItem? = null,
     onBackClicked: () -> Unit = {},
-    onSubmitSuccess: () -> Unit = {}
+    onSubmitPengajuan: (PengajuanItem) -> Unit = {}
 ) {
-    // State Data Diri
-    var namaLengkap by remember { mutableStateOf("") }
-    var nik by remember { mutableStateOf("") }
-    var tempatTanggalLahir by remember { mutableStateOf("") }
-    var jenisKelamin by remember { mutableStateOf("") }
-    var agama by remember { mutableStateOf("") }
-    var statusPerkawinan by remember { mutableStateOf("") }
-    var pekerjaan by remember { mutableStateOf("") }
-    var alamatLengkap by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val draftPrefs = remember { context.getSharedPreferences("DraftSuratSktmPrefs", Context.MODE_PRIVATE) }
 
-    // State Detail Keluarga & Keperluan
-    var nomorKK by remember { mutableStateOf("") }
-    var namaKepalaKeluarga by remember { mutableStateOf("") }
-    var keperluanSurat by remember { mutableStateOf("") }
+    // Membaca data draft lokal (jika ada)
+    val savedNama = draftPrefs.getString("nama", "") ?: ""
+    val savedNik = draftPrefs.getString("nik", "") ?: ""
+    val savedTtl = draftPrefs.getString("ttl", "") ?: ""
+    val savedJk = draftPrefs.getString("jk", "") ?: ""
+    val savedAgama = draftPrefs.getString("agama", "") ?: ""
+    val savedStatus = draftPrefs.getString("statusPerkawinan", "") ?: ""
+    val savedPekerjaan = draftPrefs.getString("pekerjaan", "") ?: ""
+    val savedAlamat = draftPrefs.getString("alamat", "") ?: ""
+    val savedNomorKK = draftPrefs.getString("nomorKK", "") ?: ""
+    val savedNamaKK = draftPrefs.getString("namaKK", "") ?: ""
+    val savedKeperluan = draftPrefs.getString("keperluan", "") ?: ""
+    val savedUriStr = draftPrefs.getString("pengantarUri", "") ?: ""
 
-    // State Dialog Konfirmasi & Sukses
-    var showConfirmDialog by remember { mutableStateOf(false) } // Untuk dialog "Yakin ingin kirim?"
-    var isSubmittedSuccess by remember { mutableStateOf(false) }       // Untuk dialog pop-up sukses
+    // State Data Diri (Prioritas: existingItem -> draft lokal -> kosong)
+    var namaLengkap by remember { mutableStateOf(existingItem?.namaPemohon ?: if (savedNama.isNotBlank()) savedNama else "") }
+    var nik by remember { mutableStateOf(existingItem?.nik ?: if (savedNik.isNotBlank()) savedNik else "") }
+    var tempatTanggalLahir by remember { mutableStateOf(existingItem?.tempatTanggalLahir ?: if (savedTtl.isNotBlank()) savedTtl else "") }
+    var jenisKelamin by remember { mutableStateOf(existingItem?.jenisKelamin ?: if (savedJk.isNotBlank()) savedJk else "") }
+    var agama by remember { mutableStateOf(existingItem?.agama ?: if (savedAgama.isNotBlank()) savedAgama else "") }
+    var statusPerkawinan by remember { mutableStateOf(existingItem?.statusPerkawinan ?: if (savedStatus.isNotBlank()) savedStatus else "") }
+    var pekerjaan by remember { mutableStateOf(existingItem?.pekerjaan ?: if (savedPekerjaan.isNotBlank()) savedPekerjaan else "") }
+    var alamatLengkap by remember { mutableStateOf(existingItem?.alamatLengkap ?: if (savedAlamat.isNotBlank()) savedAlamat else "") }
+
+    var isAutoFilled by remember { mutableStateOf(false) }
+
+    // State Detail Keluarga & Keperluan (Disimpan di namaUsaha dan lokasiUsaha pada item)
+    var nomorKK by remember { mutableStateOf(savedNomorKK) }
+    var namaKepalaKeluarga by remember { mutableStateOf(existingItem?.namaUsaha ?: if (savedNamaKK.isNotBlank()) savedNamaKK else "") }
+    var keperluanSurat by remember { mutableStateOf(existingItem?.lokasiUsaha ?: if (savedKeperluan.isNotBlank()) savedKeperluan else "") }
+
+    // State Lampiran File Pengantar RT
+    val initialUri = existingItem?.pengantarUri?.takeIf { it.isNotBlank() } ?: if (savedUriStr.isNotBlank()) savedUriStr else null
+    var pengantarUri by remember { mutableStateOf<Uri?>(initialUri?.let { Uri.parse(it) }) }
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Otomatis simpan draft ke HP
+    LaunchedEffect(namaLengkap, nik, tempatTanggalLahir, jenisKelamin, agama, statusPerkawinan, pekerjaan, alamatLengkap, nomorKK, namaKepalaKeluarga, keperluanSurat, pengantarUri) {
+        val uriToSave = pengantarUri?.toString() ?: existingItem?.pengantarUri ?: ""
+        saveDraftSuratSktm(
+            context = context,
+            nama = namaLengkap,
+            nik = nik,
+            ttl = tempatTanggalLahir,
+            jk = jenisKelamin,
+            agama = agama,
+            statusPerkawinan = statusPerkawinan,
+            pekerjaan = pekerjaan,
+            alamat = alamatLengkap,
+            nomorKK = nomorKK,
+            namaKK = namaKepalaKeluarga,
+            keperluan = keperluanSurat,
+            uriString = uriToSave
+        )
+    }
+
+    // State Dialog & Launcher Gambar
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    var showImagePreviewDialog by remember { mutableStateOf(false) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val permanentUri = saveFilePermanentlySktm(context, uri)
+            pengantarUri = permanentUri ?: uri
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success && tempCameraUri != null) {
+            val permanentUri = saveFilePermanentlySktm(context, tempCameraUri!!)
+            pengantarUri = permanentUri ?: tempCameraUri
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            val photoFile = createSktmImageFile(context)
+            val photoUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+            tempCameraUri = photoUri
+            cameraLauncher.launch(photoUri)
+        }
+    }
+
+    var showErrorValidation by remember { mutableStateOf(false) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var isSubmittedSuccess by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
     BackHandler {
         when {
             isSubmittedSuccess -> {
-                // Jika pop-up sukses sedang terbuka, tutup dan kembali ke Beranda
                 isSubmittedSuccess = false
-                onSubmitSuccess()
+                onSubmitPengajuan(
+                    createSktmPengajuanItem(
+                        nama = namaLengkap,
+                        nik = nik,
+                        ttl = tempatTanggalLahir,
+                        jk = jenisKelamin,
+                        agama = agama,
+                        statusPerkawinan = statusPerkawinan,
+                        pekerjaan = pekerjaan,
+                        alamat = alamatLengkap,
+                        namaKK = namaKepalaKeluarga,
+                        keperluan = keperluanSurat,
+                        uri = pengantarUri
+                    )
+                )
             }
             showConfirmDialog -> {
-                // Jika dialog konfirmasi sedang terbuka, tutup dialognya saja
                 showConfirmDialog = false
             }
             else -> {
-                // Jika di halaman form biasa, kembali ke halaman sebelumnya (Beranda)
                 onBackClicked()
             }
         }
     }
 
-    // TAMPILAN FORM UTAMA
     Scaffold(
         topBar = {
             Surface(
@@ -91,17 +264,10 @@ fun SuratTidakMampuScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onBackClicked) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = Color.White
-                        )
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Kembali", tint = Color.White)
                     }
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Surat Keterangan Tidak Mampu",
-                        style = AppTypography.HeadingMedium.copy(color = Color.White)
-                    )
+                    Text(text = "Surat Keterangan Tidak Mampu", style = AppTypography.HeadingMedium.copy(color = Color.White))
                 }
             }
         },
@@ -115,24 +281,62 @@ fun SuratTidakMampuScreen(
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
-            // TOMBOL ISI OTOMATIS
+            if (existingItem != null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFEF2F2),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDC2626).copy(alpha = 0.4f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = "Catatan Penolakan dari Admin:", style = AppTypography.Caption.copy(fontWeight = FontWeight.Bold), color = Color(0xFFDC2626))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = existingItem.pesanStatus, style = AppTypography.BodyRegular.copy(fontWeight = FontWeight.Medium), color = Color(0xFF991B1B))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(text = "Silakan perbaiki data di bawah ini, lalu kirimkan kembali pengajuan Anda.", style = AppTypography.Caption, color = TextPrimary)
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // TOMBOL ISI OTOMATIS DARI PROFIL
             Surface(
+                onClick = {
+                    isAutoFilled = !isAutoFilled
+                    if (isAutoFilled) {
+                        namaLengkap = initialNama.takeIf { it != "-" && it.isNotBlank() } ?: ""
+                        nik = initialNik.takeIf { it != "-" && it.isNotBlank() } ?: ""
+                        tempatTanggalLahir = initialTempatTgl.takeIf { it != "-" && it.isNotBlank() } ?: ""
+                        jenisKelamin = ""
+                        agama = initialAgama.takeIf { it != "-" && it.isNotBlank() } ?: ""
+                        statusPerkawinan = initialStatusPerkawinan.takeIf { it != "-" && it.isNotBlank() } ?: ""
+                        pekerjaan = initialPekerjaan.takeIf { it != "-" && it.isNotBlank() } ?: ""
+                        alamatLengkap = initialAlamat.takeIf { it != "-" && it.isNotBlank() } ?: ""
+                    } else {
+                        namaLengkap = existingItem?.namaPemohon ?: ""
+                        nik = existingItem?.nik ?: ""
+                        tempatTanggalLahir = existingItem?.tempatTanggalLahir ?: ""
+                        jenisKelamin = existingItem?.jenisKelamin ?: ""
+                        agama = existingItem?.agama ?: ""
+                        statusPerkawinan = existingItem?.statusPerkawinan ?: ""
+                        pekerjaan = existingItem?.pekerjaan ?: ""
+                        alamatLengkap = existingItem?.alamatLengkap ?: ""
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                color = GreenDesaLight,
+                color = if (isAutoFilled) GreenDesaPrimary else GreenDesaLight,
                 border = androidx.compose.foundation.BorderStroke(1.dp, GreenDesaPrimary.copy(alpha = 0.3f))
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "⚡  ", style = AppTypography.HeadingMedium)
+                    Text(text = if (isAutoFilled) "✓  " else "⚡  ", style = AppTypography.HeadingMedium)
                     Text(
-                        text = "Isi Otomatis dari Profil",
-                        style = AppTypography.LabelForm.copy(color = GreenDesaPrimary)
+                        text = if (isAutoFilled) "Data Terisi Otomatis dari Profil" else "Isi Otomatis dari Profil",
+                        style = AppTypography.LabelForm.copy(color = if (isAutoFilled) Color.White else GreenDesaPrimary)
                     )
                 }
             }
@@ -141,15 +345,36 @@ fun SuratTidakMampuScreen(
 
             // KARTU 1: DATA DIRI
             SktmCardSection(title = "DATA DIRI") {
-                SktmFormTextField(label = "Nama Lengkap", value = namaLengkap, onValueChange = { namaLengkap = it }, placeholder = "Masukkan nama lengkap")
-                SktmFormTextField(label = "NIK", value = nik, onValueChange = { nik = it }, placeholder = "Masukkan 16 digit NIK")
-                SktmFormTextField(label = "Tempat, Tanggal Lahir", value = tempatTanggalLahir, onValueChange = { tempatTanggalLahir = it }, placeholder = "Contoh: Bandar Lampung, 01 Januari 1990")
-                SktmFormDropdownField(label = "Jenis Kelamin", selectedValue = jenisKelamin.ifEmpty { "Pilih jenis kelamin" })
-                SktmFormDropdownField(label = "Agama", selectedValue = agama.ifEmpty { "Pilih agama" })
-                SktmFormDropdownField(label = "Status Perkawinan", selectedValue = statusPerkawinan.ifEmpty { "Pilih status perkawinan" })
-                SktmFormTextField(label = "Pekerjaan", value = pekerjaan, onValueChange = { pekerjaan = it }, placeholder = "Masukkan pekerjaan")
+                SktmFormTextField(label = "Nama Lengkap", value = namaLengkap, onValueChange = { namaLengkap = it }, placeholder = "Masukkan nama lengkap", isError = showErrorValidation && namaLengkap.isBlank())
+                SktmFormTextField(label = "NIK", value = nik, onValueChange = { nik = it }, placeholder = "Masukkan 16 digit NIK", isError = showErrorValidation && nik.isBlank())
+                SktmFormTextField(label = "Tempat, Tanggal Lahir", value = tempatTanggalLahir, onValueChange = { tempatTanggalLahir = it }, placeholder = "Contoh: Bandar Lampung, 01 Januari 1990", isError = showErrorValidation && tempatTanggalLahir.isBlank())
 
-                // 👉 ALAMAT LENGKAP (Multi-line 3-4 baris)
+                SktmDropdownField(
+                    label = "Jenis Kelamin",
+                    selectedValue = jenisKelamin,
+                    options = listOf("Laki-laki", "Perempuan"),
+                    onOptionSelected = { jenisKelamin = it },
+                    isError = showErrorValidation && jenisKelamin.isBlank()
+                )
+
+                SktmDropdownField(
+                    label = "Agama",
+                    selectedValue = agama,
+                    options = listOf("Islam", "Kristen Protestan", "Kristen Katolik", "Hindu", "Buddha", "Konghucu"),
+                    onOptionSelected = { agama = it },
+                    isError = showErrorValidation && agama.isBlank()
+                )
+
+                SktmDropdownField(
+                    label = "Status Perkawinan",
+                    selectedValue = statusPerkawinan,
+                    options = listOf("Belum Kawin", "Kawin", "Cerai Hidup", "Cerai Mati"),
+                    onOptionSelected = { statusPerkawinan = it },
+                    isError = showErrorValidation && statusPerkawinan.isBlank()
+                )
+
+                SktmFormTextField(label = "Pekerjaan", value = pekerjaan, onValueChange = { pekerjaan = it }, placeholder = "Masukkan pekerjaan", isError = showErrorValidation && pekerjaan.isBlank())
+
                 SktmFormTextField(
                     label = "Alamat Lengkap",
                     value = alamatLengkap,
@@ -157,7 +382,8 @@ fun SuratTidakMampuScreen(
                     placeholder = "Masukkan alamat sesuai KTP",
                     singleLine = false,
                     minLines = 3,
-                    maxLines = 4
+                    maxLines = 4,
+                    isError = showErrorValidation && alamatLengkap.isBlank()
                 )
             }
 
@@ -165,10 +391,9 @@ fun SuratTidakMampuScreen(
 
             // KARTU 2: DETAIL KELUARGA & KEPERLUAN
             SktmCardSection(title = "DETAIL KELUARGA & KEPERLUAN") {
-                SktmFormTextField(label = "Nomor Kartu Keluarga (KK)", value = nomorKK, onValueChange = { nomorKK = it }, placeholder = "Masukkan nomor KK")
-                SktmFormTextField(label = "Nama Kepala Keluarga (di KK)", value = namaKepalaKeluarga, onValueChange = { namaKepalaKeluarga = it }, placeholder = "Contoh: Budi Santoso")
+                SktmFormTextField(label = "Nomor Kartu Keluarga (KK)", value = nomorKK, onValueChange = { nomorKK = it }, placeholder = "Masukkan nomor KK", isError = showErrorValidation && nomorKK.isBlank())
+                SktmFormTextField(label = "Nama Kepala Keluarga (di KK)", value = namaKepalaKeluarga, onValueChange = { namaKepalaKeluarga = it }, placeholder = "Contoh: Budi Santoso", isError = showErrorValidation && namaKepalaKeluarga.isBlank())
 
-                // 👉 KEPERLUAN PEMBUATAN SURAT (Multi-line 2-3 baris)
                 SktmFormTextField(
                     label = "Keperluan Pembuatan Surat",
                     value = keperluanSurat,
@@ -176,7 +401,8 @@ fun SuratTidakMampuScreen(
                     placeholder = "Contoh: Persyaratan Berobat / Sekolah / Beasiswa",
                     singleLine = false,
                     minLines = 2,
-                    maxLines = 3
+                    maxLines = 3,
+                    isError = showErrorValidation && keperluanSurat.isBlank()
                 )
             }
 
@@ -185,16 +411,60 @@ fun SuratTidakMampuScreen(
             // KARTU 3: SURAT PENGANTAR RT
             SktmCardSection(title = "SURAT PENGANTAR RT") {
                 OutlinedButton(
-                    onClick = { /* Aksi Upload File */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
+                    onClick = { showImageSourceDialog = true },
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(containerColor = GrayBackground)
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (showErrorValidation && pengantarUri == null) Color(0xFFFEF2F2) else GrayBackground
+                    ),
+                    border = if (showErrorValidation && pengantarUri == null) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDC2626)) else null
                 ) {
-                    Icon(imageVector = Icons.Default.AttachFile, contentDescription = "Upload", tint = TextSecondary)
+                    Icon(
+                        imageVector = Icons.Default.AttachFile,
+                        contentDescription = "Upload",
+                        tint = if (pengantarUri != null) GreenDesaPrimary else if (showErrorValidation) Color(0xFFDC2626) else TextSecondary
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Unggah Foto/Scan Surat Pengantar RT", color = TextSecondary, style = AppTypography.BodyRegular)
+                    Text(
+                        text = if (pengantarUri != null) "Ubah Berkas / Foto Pengantar" else "Unggah atau Foto Surat Pengantar RT",
+                        color = if (pengantarUri != null) GreenDesaPrimary else if (showErrorValidation) Color(0xFFDC2626) else TextSecondary,
+                        style = AppTypography.BodyRegular
+                    )
+                }
+
+                if (pengantarUri != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = GreenDesaLight.copy(alpha = 0.5f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GreenDesaPrimary.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = GreenDesaPrimary, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "Pengantar RT Terlampir", style = AppTypography.BodyRegular.copy(fontWeight = FontWeight.Medium), color = GreenDesaPrimary)
+                            }
+                            Row {
+                                TextButton(onClick = { showImagePreviewDialog = true }) {
+                                    Text(text = "Lihat", color = GreenDesaPrimary, style = AppTypography.LabelForm)
+                                }
+                                TextButton(onClick = { pengantarUri = null }) {
+                                    Text(text = "Hapus", color = Color(0xFFDC2626), style = AppTypography.Caption)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (showErrorValidation && pengantarUri == null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Lampiran surat pengantar RT wajib dilampirkan", style = AppTypography.Caption.copy(color = Color(0xFFDC2626)))
                 }
             }
 
@@ -204,22 +474,42 @@ fun SuratTidakMampuScreen(
             SktmCardSection(title = "INFORMASI SURAT") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(text = "Nomor Surat (Diisi Admin)", style = AppTypography.Caption, color = TextSecondary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(text = "-", style = AppTypography.BodyRegular, color = TextPlaceholder)
                     }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(text = "Tanggal", style = AppTypography.Caption, color = TextSecondary)
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "Tanggal Pengajuan", style = AppTypography.Caption, color = TextSecondary)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = getSktmDateFormatted(),
-                            style = AppTypography.LabelForm,
-                            color = GreenDesaPrimary
-                        )
+                        Text(text = getSktmDateFormatted(), style = AppTypography.LabelForm, color = GreenDesaPrimary, textAlign = TextAlign.End)
                     }
+                }
+            }
+
+            // PESAN PERINGATAN GLOBAL JIKA ADA YANG KOSONG
+            if (showErrorValidation && (namaLengkap.isBlank() || nik.isBlank() || tempatTanggalLahir.isBlank() || jenisKelamin.isBlank() || agama.isBlank() || statusPerkawinan.isBlank() || pekerjaan.isBlank() || alamatLengkap.isBlank() || nomorKK.isBlank() || namaKepalaKeluarga.isBlank() || keperluanSurat.isBlank() || pengantarUri == null)) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFFEF2F2)
+                ) {
+                    Text(
+                        text = "⚠️ Mohon lengkapi seluruh data formulir dan surat pengantar RT yang bertanda merah.",
+                        style = AppTypography.BodyRegular.copy(color = Color(0xFFDC2626), fontWeight = FontWeight.Medium),
+                        modifier = Modifier.padding(12.dp),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
 
@@ -227,10 +517,28 @@ fun SuratTidakMampuScreen(
 
             // TOMBOL KIRIM PENGAJUAN
             Button(
-                onClick = { showConfirmDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
+                onClick = {
+                    val isFormValid = namaLengkap.isNotBlank() &&
+                            nik.isNotBlank() &&
+                            tempatTanggalLahir.isNotBlank() &&
+                            jenisKelamin.isNotBlank() &&
+                            agama.isNotBlank() &&
+                            statusPerkawinan.isNotBlank() &&
+                            pekerjaan.isNotBlank() &&
+                            alamatLengkap.isNotBlank() &&
+                            nomorKK.isNotBlank() &&
+                            namaKepalaKeluarga.isNotBlank() &&
+                            keperluanSurat.isNotBlank() &&
+                            pengantarUri != null
+
+                    if (isFormValid) {
+                        showErrorValidation = false
+                        showConfirmDialog = true
+                    } else {
+                        showErrorValidation = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
             ) {
@@ -241,7 +549,104 @@ fun SuratTidakMampuScreen(
         }
     }
 
-    // 1. POP-UP DIALOG KONFIRMASI ("Kirim Pengajuan Surat?")
+    // DIALOG PILIHAN SUMBER GAMBAR
+    if (showImageSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(text = "Pilih Sumber Berkas", style = AppTypography.HeadingMedium, color = TextPrimary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = {
+                            showImageSourceDialog = false
+                            val permissionCheck = ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA)
+                            if (permissionCheck == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                val photoFile = createSktmImageFile(context)
+                                val photoUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+                                tempCameraUri = photoUri
+                                cameraLauncher.launch(photoUri)
+                            } else {
+                                permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = GreenDesaPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Ambil Foto Langsung", color = TextPrimary, style = AppTypography.ButtonText)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            showImageSourceDialog = false
+                            galleryLauncher.launch("image/*")
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
+                    ) {
+                        Icon(Icons.Default.AttachFile, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Pilih dari Galeri", style = AppTypography.ButtonText)
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
+    }
+
+    // DIALOG PREVIEW FOTO FULLSCREEN
+    if (showImagePreviewDialog && pengantarUri != null) {
+        var scale by remember { mutableStateOf(1f) }
+        var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+
+        AlertDialog(
+            onDismissRequest = { showImagePreviewDialog = false },
+            containerColor = Color.Black,
+            shape = RoundedCornerShape(0.dp),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = {},
+            text = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                scale = (scale * zoom).coerceIn(1f, 5f)
+                                offset = if (scale == 1f) androidx.compose.ui.geometry.Offset.Zero else offset + pan
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    coil.compose.AsyncImage(
+                        model = pengantarUri,
+                        contentDescription = "Pratinjau Surat Pengantar RT",
+                        modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                }
+            },
+            confirmButton = {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Button(onClick = { showImagePreviewDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)) {
+                        Text(text = "Tutup Pratinjau", style = AppTypography.ButtonText)
+                    }
+                }
+            },
+            dismissButton = {}
+        )
+    }
+
+    // DIALOG KONFIRMASI
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
@@ -266,7 +671,7 @@ fun SuratTidakMampuScreen(
                     Button(
                         onClick = {
                             showConfirmDialog = false
-                            isSubmittedSuccess = true // Lanjut memunculkan pop-up sukses
+                            isSubmittedSuccess = true
                         },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(10.dp),
@@ -274,9 +679,7 @@ fun SuratTidakMampuScreen(
                     ) {
                         Text(text = "Ya, Kirim Sekarang", style = AppTypography.ButtonText)
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     OutlinedButton(
                         onClick = { showConfirmDialog = false },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -290,7 +693,7 @@ fun SuratTidakMampuScreen(
         )
     }
 
-    // 2. POP-UP DIALOG SUKSES ("Pengajuan Berhasil!")
+    // DIALOG SUKSES
     if (isSubmittedSuccess) {
         AlertDialog(
             onDismissRequest = { },
@@ -309,23 +712,73 @@ fun SuratTidakMampuScreen(
                 }
             },
             text = {
-                Text(text = "Dokumen Anda telah masuk ke sistem desa dan menunggu verifikasi.", style = AppTypography.BodyRegular, color = TextSecondary, textAlign = TextAlign.Center)
+                Text(text = "Dokumen Anda telah masuk ke sistem desa dan menunggu verifikasi admin.", style = AppTypography.BodyRegular, color = TextSecondary, textAlign = TextAlign.Center)
             },
             confirmButton = {
                 Button(
                     onClick = {
                         isSubmittedSuccess = false
-                        onSubmitSuccess() // Kembali ke Beranda / halaman sebelumnya
+                        clearDraftSuratSktm(context)
+                        onSubmitPengajuan(
+                            createSktmPengajuanItem(
+                                nama = namaLengkap,
+                                nik = nik,
+                                ttl = tempatTanggalLahir,
+                                jk = jenisKelamin,
+                                agama = agama,
+                                statusPerkawinan = statusPerkawinan,
+                                pekerjaan = pekerjaan,
+                                alamat = alamatLengkap,
+                                namaKK = namaKepalaKeluarga,
+                                keperluan = keperluanSurat,
+                                uri = pengantarUri
+                            )
+                        )
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
                 ) {
-                    Text(text = "Kembali ke Beranda", style = AppTypography.ButtonText)
+                    Text(text = "Lihat Status Pengajuan", style = AppTypography.ButtonText)
                 }
             }
         )
     }
+}
+
+// Fungsi bantu pembuat objek PengajuanItem khusus SKTM
+private fun createSktmPengajuanItem(
+    nama: String,
+    nik: String,
+    ttl: String,
+    jk: String,
+    agama: String,
+    statusPerkawinan: String,
+    pekerjaan: String,
+    alamat: String,
+    namaKK: String,
+    keperluan: String,
+    uri: Uri?
+): PengajuanItem {
+    return PengajuanItem(
+        id = System.currentTimeMillis().toString(),
+        jenisSurat = "Surat Keterangan Tidak Mampu",
+        namaPemohon = nama.ifBlank { "Warga Pemohon" },
+        tanggal = getSktmDateFormatted(),
+        status = StatusPengajuan.PROSES,
+        pesanStatus = "Berkas sedang dicek oleh perangkat desa",
+        nik = nik,
+        tempatTanggalLahir = ttl,
+        jenisKelamin = jk.ifBlank { "Laki-laki" },
+        agama = agama,
+        statusPerkawinan = statusPerkawinan,
+        pekerjaan = pekerjaan,
+        alamatLengkap = alamat,
+        namaUsaha = namaKK,       // Menampung Nama Kepala Keluarga
+        lokasiUsaha = keperluan,   // Menampung Keperluan Pembuatan Surat
+        pengantarUri = uri?.toString() ?: "",
+        nomorSurat = "-"
+    )
 }
 
 // Komponen Pendukung Card Section
@@ -337,14 +790,8 @@ fun SktmCardSection(title: String, content: @Composable ColumnScope.() -> Unit) 
         color = Color.White,
         shadowElevation = 2.dp
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = title,
-                style = AppTypography.HeadingMedium,
-                color = TextPrimary
-            )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = title, style = AppTypography.HeadingMedium, color = TextPrimary)
             Spacer(modifier = Modifier.height(6.dp))
             HorizontalDivider(color = BorderColor, thickness = 1.dp)
             Spacer(modifier = Modifier.height(12.dp))
@@ -353,19 +800,25 @@ fun SktmCardSection(title: String, content: @Composable ColumnScope.() -> Unit) 
     }
 }
 
-// Komponen Input TextField yang Mendukung Multi-line
+// Komponen Input TextField Standar
 @Composable
 fun SktmFormTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    singleLine: Boolean = true, // Default true untuk field biasa
+    singleLine: Boolean = true,
     minLines: Int = 1,
-    maxLines: Int = 1
+    maxLines: Int = 1,
+    isError: Boolean = false
 ) {
     Column(modifier = Modifier.padding(bottom = 14.dp)) {
-        Text(text = label, style = AppTypography.LabelForm, color = TextPrimary)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(text = label, style = AppTypography.LabelForm, color = if (isError) Color(0xFFDC2626) else TextPrimary)
+            if (isError) {
+                Text(text = "Wajib diisi", style = AppTypography.Caption.copy(color = Color(0xFFDC2626)))
+            }
+        }
         Spacer(modifier = Modifier.height(6.dp))
         OutlinedTextField(
             value = value,
@@ -377,41 +830,89 @@ fun SktmFormTextField(
             singleLine = singleLine,
             minLines = minLines,
             maxLines = maxLines,
+            isError = isError,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
                 disabledContainerColor = Color.White,
-                unfocusedBorderColor = GrayBorder,
-                focusedBorderColor = GreenDesaPrimary,
+                unfocusedBorderColor = if (isError) Color(0xFFDC2626) else GrayBorder,
+                focusedBorderColor = if (isError) Color(0xFFDC2626) else GreenDesaPrimary,
                 focusedLabelColor = GreenDesaPrimary,
-                cursorColor = GreenDesaPrimary
+                cursorColor = GreenDesaPrimary,
+                errorBorderColor = Color(0xFFDC2626)
             )
         )
     }
 }
 
-// Komponen Dropdown Simulasi dengan ukuran font ramah lansia
+// Komponen Dropdown Interaktif Khusus SKTM
 @Composable
-fun SktmFormDropdownField(label: String, selectedValue: String) {
+fun SktmDropdownField(
+    label: String,
+    selectedValue: String,
+    options: List<String>,
+    onOptionSelected: (String) -> Unit,
+    isError: Boolean = false
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.padding(bottom = 14.dp)) {
-        Text(text = label, style = AppTypography.LabelForm, color = TextPrimary)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(text = label, style = AppTypography.LabelForm, color = if (isError) Color(0xFFDC2626) else TextPrimary)
+            if (isError) {
+                Text(text = "Wajib dipilih", style = AppTypography.Caption.copy(color = Color(0xFFDC2626)))
+            }
+        }
         Spacer(modifier = Modifier.height(6.dp))
-        OutlinedButton(
-            onClick = { /* Aksi Buka Pilihan Dropdown */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(10.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, GrayBorder),
-            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { expanded = !expanded },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(10.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (isError) Color(0xFFDC2626) else GrayBorder),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = if (isError) Color(0xFFFEF2F2) else Color.White)
             ) {
-                Text(text = selectedValue, color = TextPlaceholder, style = AppTypography.BodyRegular)
-                Text(text = "▼", color = TextSecondary, style = AppTypography.Caption)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (selectedValue.isBlank()) "Pilih $label" else selectedValue,
+                        color = if (selectedValue.isBlank()) TextPlaceholder else TextPrimary,
+                        style = AppTypography.BodyRegular
+                    )
+                    Text(
+                        text = if (expanded) "▲" else "▼",
+                        color = if (isError) Color(0xFFDC2626) else GreenDesaPrimary,
+                        style = AppTypography.BodyRegular
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth(0.9f).background(Color.White),
+                offset = androidx.compose.ui.unit.DpOffset(0.dp, 4.dp)
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                        text = {
+                            Text(
+                                text = option,
+                                style = AppTypography.BodyRegular.copy(fontWeight = if (option == selectedValue) FontWeight.Bold else FontWeight.Normal),
+                                color = if (option == selectedValue) GreenDesaPrimary else TextPrimary
+                            )
+                        },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }

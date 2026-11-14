@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
 
                 var showIncompleteProfileDialog by remember { mutableStateOf(false) }
 
-                // State untuk melacak asal layar sebelum masuk ke surat usaha (Status / Detail)
+                // State untuk melacak asal layar sebelum masuk ke form surat (Status / Detail)
                 var previousScreenBeforeSurat by remember { mutableStateOf("status") }
 
                 // State untuk mempertahankan pilihan filter dan urutan waktu di StatusScreen (Warga)
@@ -103,7 +103,7 @@ class MainActivity : ComponentActivity() {
                                             val jenisSurat = doc.getString("jenisSurat") ?: "Surat Keterangan Usaha"
                                             val namaPemohon = doc.getString("namaPemohon") ?: "Warga"
                                             val tanggal = doc.getString("tanggal") ?: ""
-                                            val tanggalKeputusan = doc.getString("tanggalKeputusan") ?: "" // 👈 DITAMBAHKAN AGAR TIDAK KOSONG
+                                            val tanggalKeputusan = doc.getString("tanggalKeputusan") ?: ""
                                             val statusStr = doc.getString("status") ?: "PROSES"
                                             val status = try { StatusPengajuan.valueOf(statusStr) } catch (err: Exception) { StatusPengajuan.PROSES }
                                             val pesanStatus = doc.getString("pesanStatus") ?: "Pengajuan Anda sedang diproses."
@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                                                 jenisSurat = jenisSurat,
                                                 namaPemohon = namaPemohon,
                                                 tanggal = tanggal,
-                                                tanggalKeputusan = tanggalKeputusan, // 👈 DIMASUKKAN KE OBJECT
+                                                tanggalKeputusan = tanggalKeputusan,
                                                 status = status,
                                                 pesanStatus = pesanStatus,
                                                 nik = nik,
@@ -439,20 +439,96 @@ class MainActivity : ComponentActivity() {
                                     selectedAlasanDitolak = pengajuanItem.pesanStatus
                                     selectedNamaFileRt = pengajuanItem.pengantarUri.ifBlank { "pengantar_rt.jpg" }
 
-                                    val baseFields = mutableListOf(
-                                        DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
-                                        DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
-                                        DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
-                                        DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
-                                        DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
-                                        DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
-                                        DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
-                                        DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" })
-                                    )
+                                    // Kelompokkan data detail berdasarkan masing-masing jenis surat
+                                    val baseFields = mutableListOf<DetailFieldItem>()
 
-                                    if (pengajuanItem.jenisSurat.contains("Usaha", ignoreCase = true)) {
-                                        baseFields.add(DetailFieldItem("Nama / Deskripsi Usaha", pengajuanItem.namaUsaha.ifBlank { "-" }))
-                                        baseFields.add(DetailFieldItem("Lokasi Usaha", pengajuanItem.lokasiUsaha.ifBlank { "-" }))
+                                    when {
+                                        pengajuanItem.jenisSurat.contains("Usaha", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Nama / Deskripsi Usaha", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Lokasi Usaha", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Domisili", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap (KTP)", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Tempat Tinggal Saat Ini", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Kehilangan", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap Pelapor", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK Pelapor", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Detail Waktu & Kejadian", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Kematian", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Almarhum / Almarhumah", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK Almarhum", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Almarhum", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Hubungan Pelapor", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Detail Waktu & Tempat Wafat", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Nama Kepala Keluarga (KK)", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Keperluan Surat", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        else -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
                                     }
 
                                     selectedFields = baseFields
@@ -461,8 +537,12 @@ class MainActivity : ComponentActivity() {
                                 onResubmitClicked = { pengajuanItem ->
                                     itemYangAkanDiedit = pengajuanItem
                                     previousScreenBeforeSurat = "status"
-                                    if (pengajuanItem.jenisSurat.contains("Usaha", ignoreCase = true)) {
-                                        currentScreen = "surat_usaha"
+                                    when {
+                                        pengajuanItem.jenisSurat.contains("Usaha", ignoreCase = true) -> currentScreen = "surat_usaha"
+                                        pengajuanItem.jenisSurat.contains("Domisili", ignoreCase = true) -> currentScreen = "surat_domisili"
+                                        pengajuanItem.jenisSurat.contains("Kehilangan", ignoreCase = true) -> currentScreen = "surat_kehilangan"
+                                        pengajuanItem.jenisSurat.contains("Kematian", ignoreCase = true) -> currentScreen = "surat_kematian"
+                                        pengajuanItem.jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> currentScreen = "surat_sktm"
                                     }
                                 }
                             )
@@ -483,8 +563,12 @@ class MainActivity : ComponentActivity() {
                                         itemYangAkanDiedit = selectedPengajuanItem
                                     }
                                     previousScreenBeforeSurat = "detail_pengajuan"
-                                    if (selectedJenisSurat.contains("Usaha", ignoreCase = true)) {
-                                        currentScreen = "surat_usaha"
+                                    when {
+                                        selectedJenisSurat.contains("Usaha", ignoreCase = true) -> currentScreen = "surat_usaha"
+                                        selectedJenisSurat.contains("Domisili", ignoreCase = true) -> currentScreen = "surat_domisili"
+                                        selectedJenisSurat.contains("Kehilangan", ignoreCase = true) -> currentScreen = "surat_kehilangan"
+                                        selectedJenisSurat.contains("Kematian", ignoreCase = true) -> currentScreen = "surat_kematian"
+                                        selectedJenisSurat.contains("Tidak Mampu", ignoreCase = true) -> currentScreen = "surat_sktm"
                                     }
                                 }
                             )
@@ -591,10 +675,133 @@ class MainActivity : ComponentActivity() {
                                     }
                             }
                         )
-                        "surat_domisili" -> SuratDomisiliScreen(onBackClicked = { currentScreen = "home" }, onSubmitSuccess = { currentScreen = "home" })
-                        "surat_kehilangan" -> SuratKehilanganScreen(onBackClicked = { currentScreen = "home" }, onSubmitSuccess = { currentScreen = "home" })
-                        "surat_kematian" -> SuratKematianScreen(onBackClicked = { currentScreen = "home" }, onSubmitSuccess = { currentScreen = "home" })
-                        "surat_sktm" -> SuratTidakMampuScreen(onBackClicked = { currentScreen = "home" }, onSubmitSuccess = { currentScreen = "home" })
+                        "surat_domisili" -> SuratDomisiliScreen(
+                            initialNama = namaLengkapUser,
+                            initialNik = nikUser,
+                            initialTempatTgl = tempatTglLahirUser,
+                            initialAgama = agamaUser,
+                            initialPekerjaan = pekerjaanUser,
+                            initialAlamat = alamatUser,
+                            existingItem = itemYangAkanDiedit,
+                            onBackClicked = {
+                                currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
+                            },
+                            onSubmitPengajuan = { itemBaru ->
+                                firestore.collection("pengajuan").document(itemBaru.id)
+                                    .set(itemBaru)
+                                    .addOnSuccessListener {
+                                        if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
+                                            firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
+                                        }
+                                        itemYangAkanDiedit = null
+
+                                        val prefs = context.getSharedPreferences("DraftSuratDomisiliPrefs", Context.MODE_PRIVATE)
+                                        prefs.edit().clear().apply()
+
+                                        currentScreen = "status"
+                                        Toast.makeText(context, "Pengajuan surat domisili berhasil dikirim!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Gagal mengirim: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        )
+                        "surat_kehilangan" -> SuratKehilanganScreen(
+                            initialNama = namaLengkapUser,
+                            initialNik = nikUser,
+                            initialTempatTgl = tempatTglLahirUser,
+                            initialAgama = agamaUser,
+                            initialStatusPerkawinan = statusUser,
+                            initialPekerjaan = pekerjaanUser,
+                            initialAlamat = alamatUser,
+                            existingItem = itemYangAkanDiedit,
+                            onBackClicked = {
+                                currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
+                            },
+                            onSubmitPengajuan = { itemBaru ->
+                                firestore.collection("pengajuan").document(itemBaru.id)
+                                    .set(itemBaru)
+                                    .addOnSuccessListener {
+                                        if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
+                                            firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
+                                        }
+                                        itemYangAkanDiedit = null
+
+                                        val prefs = context.getSharedPreferences("DraftSuratKehilanganPrefs", Context.MODE_PRIVATE)
+                                        prefs.edit().clear().apply()
+
+                                        currentScreen = "status"
+                                        Toast.makeText(context, "Pengajuan surat kehilangan berhasil dikirim!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Gagal mengirim: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        )
+                        "surat_kematian" -> SuratKematianScreen(
+                            initialNama = namaLengkapUser,
+                            initialNik = nikUser,
+                            initialTempatTgl = tempatTglLahirUser,
+                            initialAgama = agamaUser,
+                            initialStatusPerkawinan = statusUser,
+                            initialPekerjaan = pekerjaanUser,
+                            initialAlamat = alamatUser,
+                            existingItem = itemYangAkanDiedit,
+                            onBackClicked = {
+                                currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
+                            },
+                            onSubmitPengajuan = { itemBaru ->
+                                firestore.collection("pengajuan").document(itemBaru.id)
+                                    .set(itemBaru)
+                                    .addOnSuccessListener {
+                                        if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
+                                            firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
+                                        }
+                                        itemYangAkanDiedit = null
+
+                                        val prefs = context.getSharedPreferences("DraftSuratKematianPrefs", Context.MODE_PRIVATE)
+                                        prefs.edit().clear().apply()
+
+                                        currentScreen = "status"
+                                        Toast.makeText(context, "Pengajuan surat kematian berhasil dikirim!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Gagal mengirim: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        )
+                        "surat_sktm" -> SuratTidakMampuScreen(
+                            initialNama = namaLengkapUser,
+                            initialNik = nikUser,
+                            initialTempatTgl = tempatTglLahirUser,
+                            initialAgama = agamaUser,
+                            initialStatusPerkawinan = statusUser,
+                            initialPekerjaan = pekerjaanUser,
+                            initialAlamat = alamatUser,
+                            existingItem = itemYangAkanDiedit,
+                            onBackClicked = {
+                                currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
+                            },
+                            onSubmitPengajuan = { itemBaru ->
+                                firestore.collection("pengajuan").document(itemBaru.id)
+                                    .set(itemBaru)
+                                    .addOnSuccessListener {
+                                        if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
+                                            firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
+                                        }
+                                        itemYangAkanDiedit = null
+
+                                        val prefs = context.getSharedPreferences("DraftSuratSktmPrefs", Context.MODE_PRIVATE)
+                                        prefs.edit().clear().apply()
+
+                                        currentScreen = "status"
+                                        Toast.makeText(context, "Pengajuan SKTM berhasil dikirim!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Gagal mengirim: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        )
                     }
 
                     if (showIncompleteProfileDialog) {
