@@ -390,16 +390,34 @@ class MainActivity : ComponentActivity() {
                                         pengajuanItem.jenisSurat.contains("Kematian", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-                                                    DetailFieldItem("Nama Almarhum / Almarhumah", pengajuanItem.namaPemohon),
-                                                    DetailFieldItem("NIK Almarhum", pengajuanItem.nik.ifBlank { "-" }),
+                                                    // 1. Data Diri Almarhum / Almarhumah
+                                                    DetailFieldItem("Nama Lengkap Almarhum/h", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK Almarhum/h", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Umur Almarhum/h", pengajuanItem.umur.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
                                                     DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
-                                                    DetailFieldItem("Alamat Almarhum", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-                                                    DetailFieldItem("Hubungan Pelapor", pengajuanItem.namaUsaha.ifBlank { "-" }),
-                                                    DetailFieldItem("Detail Waktu & Tempat Wafat", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                    DetailFieldItem("Alamat Lengkap Almarhum/h", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+
+                                                    // 2. Detail Kematian (Waktu & Tempat) - Dipecah 4
+                                                    DetailFieldItem("Pukul / Jam Wafat", pengajuanItem.pukulWafat.ifBlank { "-" }),
+                                                    DetailFieldItem("Hari Wafat", pengajuanItem.hariWafat.ifBlank { "-" }),
+                                                    DetailFieldItem("Tanggal Wafat", pengajuanItem.tanggalWafat.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat Wafat", pengajuanItem.tempatWafat.ifBlank { "-" }),
+
+                                                    // 3. Detail Pemakaman - Dipecah 4
+                                                    DetailFieldItem("Pukul Pemakaman", pengajuanItem.pukulPemakaman.ifBlank { "-" }),
+                                                    DetailFieldItem("Hari Pemakaman", pengajuanItem.hariPemakaman.ifBlank { "-" }),
+                                                    DetailFieldItem("Tanggal Pemakaman", pengajuanItem.tanggalPemakaman.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat Pemakaman (TPU)", pengajuanItem.tempatPemakaman.ifBlank { "-" }),
+
+                                                    // 4. Data Pelapor
+                                                    DetailFieldItem("Nama Pelapor", pengajuanItem.namaPelapor.ifBlank { "-" }),
+                                                    DetailFieldItem("NIK Pelapor", pengajuanItem.nikPelapor.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Pelapor", pengajuanItem.alamatPelapor.ifBlank { "-" }),
+                                                    DetailFieldItem("Status / Hubungan dengan Almarhum", pengajuanItem.namaUsaha.ifBlank { "-" })
                                                 )
                                             )
                                         }
@@ -601,16 +619,34 @@ class MainActivity : ComponentActivity() {
                                         pengajuanItem.jenisSurat.contains("Kematian", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-                                                    DetailFieldItem("Nama Almarhum / Almarhumah", pengajuanItem.namaPemohon),
-                                                    DetailFieldItem("NIK Almarhum", pengajuanItem.nik.ifBlank { "-" }),
+                                                    // 1. Data Diri Almarhum / Almarhumah
+                                                    DetailFieldItem("Nama Lengkap Almarhum/h", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK Almarhum/h", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Umur Almarhum/h", pengajuanItem.umur.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
                                                     DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
-                                                    DetailFieldItem("Alamat Almarhum", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-                                                    DetailFieldItem("Hubungan Pelapor", pengajuanItem.namaUsaha.ifBlank { "-" }),
-                                                    DetailFieldItem("Detail Waktu & Tempat Wafat", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                    DetailFieldItem("Alamat Lengkap Almarhum/h", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+
+                                                    // 2. Detail Kematian (Waktu & Tempat) - Dipecah 4
+                                                    DetailFieldItem("Pukul / Jam Wafat", pengajuanItem.pukulWafat.ifBlank { "-" }),
+                                                    DetailFieldItem("Hari Wafat", pengajuanItem.hariWafat.ifBlank { "-" }),
+                                                    DetailFieldItem("Tanggal Wafat", pengajuanItem.tanggalWafat.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat Wafat", pengajuanItem.tempatWafat.ifBlank { "-" }),
+
+                                                    // 3. Detail Pemakaman - Dipecah 4
+                                                    DetailFieldItem("Pukul Pemakaman", pengajuanItem.pukulPemakaman.ifBlank { "-" }),
+                                                    DetailFieldItem("Hari Pemakaman", pengajuanItem.hariPemakaman.ifBlank { "-" }),
+                                                    DetailFieldItem("Tanggal Pemakaman", pengajuanItem.tanggalPemakaman.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat Pemakaman (TPU)", pengajuanItem.tempatPemakaman.ifBlank { "-" }),
+
+                                                    // 4. Data Pelapor
+                                                    DetailFieldItem("Nama Pelapor", pengajuanItem.namaPelapor.ifBlank { "-" }),
+                                                    DetailFieldItem("NIK Pelapor", pengajuanItem.nikPelapor.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Pelapor", pengajuanItem.alamatPelapor.ifBlank { "-" }),
+                                                    DetailFieldItem("Status / Hubungan dengan Almarhum", pengajuanItem.namaUsaha.ifBlank { "-" })
                                                 )
                                             )
                                         }

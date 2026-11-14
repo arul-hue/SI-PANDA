@@ -28,7 +28,7 @@ import java.util.Locale
 
 @Composable
 fun AdminEditPengajuanScreen(
-    pengajuan: PengajuanItem, // Menerima objek PengajuanItem asli dari inputan warga
+    pengajuan: PengajuanItem,
     onBackClicked: () -> Unit = {},
     onSaveSuccess: (updatedItem: PengajuanItem) -> Unit = {}
 ) {
@@ -42,8 +42,28 @@ fun AdminEditPengajuanScreen(
     var pekerjaan by remember { mutableStateOf(pengajuan.pekerjaan) }
     var alamatLengkap by remember { mutableStateOf(pengajuan.alamatLengkap) }
 
-    // Parsing data dinamis khusus berdasarkan jenis surat
+    // Cek Jenis Surat
+    val isKematian = pengajuan.jenisSurat.contains("Kematian", ignoreCase = true)
     val isSktm = pengajuan.jenisSurat.contains("Tidak Mampu", ignoreCase = true)
+
+    // State Khusus Kematian
+    var umur by remember { mutableStateOf(pengajuan.umur) }
+    var pukulWafat by remember { mutableStateOf(pengajuan.pukulWafat) }
+    var hariWafat by remember { mutableStateOf(pengajuan.hariWafat) }
+    var tanggalWafat by remember { mutableStateOf(pengajuan.tanggalWafat) }
+    var tempatWafat by remember { mutableStateOf(pengajuan.tempatWafat) }
+
+    var pukulPemakaman by remember { mutableStateOf(pengajuan.pukulPemakaman) }
+    var hariPemakaman by remember { mutableStateOf(pengajuan.hariPemakaman) }
+    var tanggalPemakaman by remember { mutableStateOf(pengajuan.tanggalPemakaman) }
+    var tempatPemakaman by remember { mutableStateOf(pengajuan.tempatPemakaman) }
+
+    var namaPelapor by remember { mutableStateOf(pengajuan.namaPelapor) }
+    var nikPelapor by remember { mutableStateOf(pengajuan.nikPelapor) }
+    var alamatPelapor by remember { mutableStateOf(pengajuan.alamatPelapor) }
+    var hubunganPelapor by remember { mutableStateOf(pengajuan.namaUsaha) } // Disimpan di namaUsaha untuk kematian
+
+    // Parsing data dinamis surat lain (Usaha, Domisili, Kehilangan, SKTM)
     val savedLokasi = pengajuan.lokasiUsaha
     val splitLokasi = if (isSktm) savedLokasi.split(" | Keperluan: ") else listOf()
 
@@ -162,17 +182,27 @@ fun AdminEditPengajuanScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     AdminEditTextField(
-                        label = if (pengajuan.jenisSurat.contains("Kematian", ignoreCase = true)) "Nama Almarhum / Almarhumah" else "Nama Lengkap",
+                        label = if (isKematian) "Nama Almarhum / Almarhumah" else "Nama Lengkap",
                         value = nama,
                         onValueChange = { nama = it },
                         isError = showErrorValidation && nama.isBlank()
                     )
                     AdminEditTextField(
-                        label = "NIK",
+                        label = if (isKematian) "NIK Almarhum" else "NIK",
                         value = nik,
                         onValueChange = { nik = it },
                         isError = showErrorValidation && nik.isBlank()
                     )
+
+                    if (isKematian) {
+                        AdminEditTextField(
+                            label = "Umur Almarhum",
+                            value = umur,
+                            onValueChange = { umur = it },
+                            isError = showErrorValidation && umur.isBlank()
+                        )
+                    }
+
                     AdminEditTextField(
                         label = "Tempat, Tanggal Lahir",
                         value = ttl,
@@ -198,14 +228,14 @@ fun AdminEditPengajuanScreen(
                         isError = showErrorValidation && statusPerkawinan.isBlank()
                     )
                     AdminEditTextField(
-                        label = "Pekerjaan",
+                        label = if (isKematian) "Pekerjaan Terakhir" else "Pekerjaan",
                         value = pekerjaan,
                         onValueChange = { pekerjaan = it },
                         isError = showErrorValidation && pekerjaan.isBlank()
                     )
 
                     AdminEditTextField(
-                        label = "Alamat Lengkap",
+                        label = if (isKematian) "Alamat Almarhum" else "Alamat Lengkap",
                         value = alamatLengkap,
                         onValueChange = { alamatLengkap = it },
                         singleLine = false,
@@ -214,93 +244,103 @@ fun AdminEditPengajuanScreen(
                         isError = showErrorValidation && alamatLengkap.isBlank()
                     )
 
-                    // RENDER FIELD TAMBAHAN SECARA DINAMIS BERDASARKAN JENIS SURAT
-                    when {
-                        pengajuan.jenisSurat.contains("Usaha", ignoreCase = true) -> {
-                            AdminEditTextField(
-                                label = "Nama / Deskripsi Usaha",
-                                value = fieldExtra1,
-                                onValueChange = { fieldExtra1 = it },
-                                isError = showErrorValidation && fieldExtra1.isBlank()
-                            )
-                            AdminEditTextField(
-                                label = "Lokasi Usaha",
-                                value = fieldExtra2,
-                                onValueChange = { fieldExtra2 = it },
-                                singleLine = false,
-                                minLines = 2,
-                                maxLines = 3,
-                                isError = showErrorValidation && fieldExtra2.isBlank()
-                            )
-                        }
-                        pengajuan.jenisSurat.contains("Domisili", ignoreCase = true) -> {
-                            AdminEditTextField(
-                                label = "Alamat Tempat Tinggal Saat Ini",
-                                value = fieldExtra2,
-                                onValueChange = { fieldExtra2 = it },
-                                singleLine = false,
-                                minLines = 2,
-                                maxLines = 3,
-                                isError = showErrorValidation && fieldExtra2.isBlank()
-                            )
-                        }
-                        pengajuan.jenisSurat.contains("Kehilangan", ignoreCase = true) -> {
-                            AdminEditTextField(
-                                label = "Barang / Surat yang Hilang",
-                                value = fieldExtra1,
-                                onValueChange = { fieldExtra1 = it },
-                                isError = showErrorValidation && fieldExtra1.isBlank()
-                            )
-                            AdminEditTextField(
-                                label = "Detail Waktu & Kejadian",
-                                value = fieldExtra2,
-                                onValueChange = { fieldExtra2 = it },
-                                singleLine = false,
-                                minLines = 2,
-                                maxLines = 3,
-                                isError = showErrorValidation && fieldExtra2.isBlank()
-                            )
-                        }
-                        pengajuan.jenisSurat.contains("Kematian", ignoreCase = true) -> {
-                            AdminEditTextField(
-                                label = "Hubungan Pelapor dengan Almarhum",
-                                value = fieldExtra1,
-                                onValueChange = { fieldExtra1 = it },
-                                isError = showErrorValidation && fieldExtra1.isBlank()
-                            )
-                            AdminEditTextField(
-                                label = "Detail Waktu & Tempat Wafat",
-                                value = fieldExtra2,
-                                onValueChange = { fieldExtra2 = it },
-                                singleLine = false,
-                                minLines = 2,
-                                maxLines = 3,
-                                isError = showErrorValidation && fieldExtra2.isBlank()
-                            )
-                        }
-                        pengajuan.jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> {
-                            AdminEditTextField(
-                                label = "Nomor Kartu Keluarga (KK)",
-                                value = fieldExtra1,
-                                onValueChange = { fieldExtra1 = it },
-                                placeholder = "Masukkan nomor KK",
-                                isError = showErrorValidation && fieldExtra1.isBlank()
-                            )
-                            AdminEditTextField(
-                                label = "Nama Kepala Keluarga (di KK)",
-                                value = pengajuan.namaUsaha,
-                                onValueChange = { /* Nama KK */ },
-                                isError = false
-                            )
-                            AdminEditTextField(
-                                label = "Keperluan Pembuatan Surat",
-                                value = fieldExtra2,
-                                onValueChange = { fieldExtra2 = it },
-                                singleLine = false,
-                                minLines = 2,
-                                maxLines = 3,
-                                isError = showErrorValidation && fieldExtra2.isBlank()
-                            )
+                    // RENDER FIELD TAMBAHAN KHUSUS KEMATIAN SECARA TERPISAH (DIKEOMPOKKAN)
+                    if (isKematian) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Rincian Kematian (Waktu & Tempat)", style = AppTypography.HeadingMedium, color = TextPrimary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        AdminEditTextField(label = "Pukul / Jam Wafat", value = pukulWafat, onValueChange = { pukulWafat = it }, isError = showErrorValidation && pukulWafat.isBlank())
+                        AdminEditTextField(label = "Hari Wafat", value = hariWafat, onValueChange = { hariWafat = it }, isError = showErrorValidation && hariWafat.isBlank())
+                        AdminEditTextField(label = "Tanggal Wafat", value = tanggalWafat, onValueChange = { tanggalWafat = it }, isError = showErrorValidation && tanggalWafat.isBlank())
+                        AdminEditTextField(label = "Tempat Wafat", value = tempatWafat, onValueChange = { tempatWafat = it }, isError = showErrorValidation && tempatWafat.isBlank())
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Rincian Pemakaman", style = AppTypography.HeadingMedium, color = TextPrimary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        AdminEditTextField(label = "Pukul Pemakaman", value = pukulPemakaman, onValueChange = { pukulPemakaman = it }, isError = showErrorValidation && pukulPemakaman.isBlank())
+                        AdminEditTextField(label = "Hari Pemakaman", value = hariPemakaman, onValueChange = { hariPemakaman = it }, isError = showErrorValidation && hariPemakaman.isBlank())
+                        AdminEditTextField(label = "Tanggal Pemakaman", value = tanggalPemakaman, onValueChange = { tanggalPemakaman = it }, isError = showErrorValidation && tanggalPemakaman.isBlank())
+                        AdminEditTextField(label = "Tempat Pemakaman (TPU)", value = tempatPemakaman, onValueChange = { tempatPemakaman = it }, isError = showErrorValidation && tempatPemakaman.isBlank())
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Data Pelapor", style = AppTypography.HeadingMedium, color = TextPrimary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        AdminEditTextField(label = "Nama Pelapor", value = namaPelapor, onValueChange = { namaPelapor = it }, isError = showErrorValidation && namaPelapor.isBlank())
+                        AdminEditTextField(label = "NIK Pelapor", value = nikPelapor, onValueChange = { nikPelapor = it }, isError = showErrorValidation && nikPelapor.isBlank())
+                        AdminEditTextField(label = "Alamat Pelapor", value = alamatPelapor, onValueChange = { alamatPelapor = it }, singleLine = false, minLines = 2, maxLines = 3, isError = showErrorValidation && alamatPelapor.isBlank())
+                        AdminEditTextField(label = "Status / Hubungan dengan Almarhum", value = hubunganPelapor, onValueChange = { hubunganPelapor = it }, isError = showErrorValidation && hubunganPelapor.isBlank())
+                    } else {
+                        // RENDER FIELD TAMBAHAN SURAT LAINNYA
+                        when {
+                            pengajuan.jenisSurat.contains("Usaha", ignoreCase = true) -> {
+                                AdminEditTextField(
+                                    label = "Nama / Deskripsi Usaha",
+                                    value = fieldExtra1,
+                                    onValueChange = { fieldExtra1 = it },
+                                    isError = showErrorValidation && fieldExtra1.isBlank()
+                                )
+                                AdminEditTextField(
+                                    label = "Lokasi Usaha",
+                                    value = fieldExtra2,
+                                    onValueChange = { fieldExtra2 = it },
+                                    singleLine = false,
+                                    minLines = 2,
+                                    maxLines = 3,
+                                    isError = showErrorValidation && fieldExtra2.isBlank()
+                                )
+                            }
+                            pengajuan.jenisSurat.contains("Domisili", ignoreCase = true) -> {
+                                AdminEditTextField(
+                                    label = "Alamat Tempat Tinggal Saat Ini",
+                                    value = fieldExtra2,
+                                    onValueChange = { fieldExtra2 = it },
+                                    singleLine = false,
+                                    minLines = 2,
+                                    maxLines = 3,
+                                    isError = showErrorValidation && fieldExtra2.isBlank()
+                                )
+                            }
+                            pengajuan.jenisSurat.contains("Kehilangan", ignoreCase = true) -> {
+                                AdminEditTextField(
+                                    label = "Barang / Surat yang Hilang",
+                                    value = fieldExtra1,
+                                    onValueChange = { fieldExtra1 = it },
+                                    isError = showErrorValidation && fieldExtra1.isBlank()
+                                )
+                                AdminEditTextField(
+                                    label = "Detail Waktu & Kejadian",
+                                    value = fieldExtra2,
+                                    onValueChange = { fieldExtra2 = it },
+                                    singleLine = false,
+                                    minLines = 2,
+                                    maxLines = 3,
+                                    isError = showErrorValidation && fieldExtra2.isBlank()
+                                )
+                            }
+                            pengajuan.jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> {
+                                AdminEditTextField(
+                                    label = "Nomor Kartu Keluarga (KK)",
+                                    value = fieldExtra1,
+                                    onValueChange = { fieldExtra1 = it },
+                                    placeholder = "Masukkan nomor KK",
+                                    isError = showErrorValidation && fieldExtra1.isBlank()
+                                )
+                                AdminEditTextField(
+                                    label = "Nama Kepala Keluarga (di KK)",
+                                    value = pengajuan.namaUsaha,
+                                    onValueChange = { },
+                                    isError = false
+                                )
+                                AdminEditTextField(
+                                    label = "Keperluan Pembuatan Surat",
+                                    value = fieldExtra2,
+                                    onValueChange = { fieldExtra2 = it },
+                                    singleLine = false,
+                                    minLines = 2,
+                                    maxLines = 3,
+                                    isError = showErrorValidation && fieldExtra2.isBlank()
+                                )
+                            }
                         }
                     }
 
@@ -507,6 +547,7 @@ fun AdminEditPengajuanScreen(
                             statusPerkawinan.isNotBlank() &&
                             pekerjaan.isNotBlank() &&
                             alamatLengkap.isNotBlank() &&
+                            (!isKematian || (umur.isNotBlank() && pukulWafat.isNotBlank() && hariWafat.isNotBlank() && tanggalWafat.isNotBlank() && tempatWafat.isNotBlank() && pukulPemakaman.isNotBlank() && hariPemakaman.isNotBlank() && tanggalPemakaman.isNotBlank() && tempatPemakaman.isNotBlank() && namaPelapor.isNotBlank() && nikPelapor.isNotBlank() && alamatPelapor.isNotBlank() && hubunganPelapor.isNotBlank())) &&
                             (!isDiterima || nomorSurat.isNotBlank()) &&
                             (isDiterima || alasanDitolak.isNotBlank())
 
@@ -659,8 +700,17 @@ fun AdminEditPengajuanScreen(
                         val newId = System.currentTimeMillis().toString()
                         val waktuKeputusan = getCurrentDateTime()
 
-                        val finalNamaUsaha = if (isSktm) pengajuan.namaUsaha else fieldExtra1
-                        val finalLokasiUsaha = if (isSktm) "No. KK: $fieldExtra1 | Keperluan: $fieldExtra2" else fieldExtra2
+                        val finalNamaUsaha = when {
+                            isKematian -> hubunganPelapor
+                            isSktm -> pengajuan.namaUsaha
+                            else -> fieldExtra1
+                        }
+
+                        val finalLokasiUsaha = when {
+                            isKematian -> pengajuan.lokasiUsaha
+                            isSktm -> "No. KK: $fieldExtra1 | Keperluan: $fieldExtra2"
+                            else -> fieldExtra2
+                        }
 
                         val updatedItem = pengajuan.copy(
                             id = newId,
@@ -672,6 +722,21 @@ fun AdminEditPengajuanScreen(
                             statusPerkawinan = statusPerkawinan,
                             pekerjaan = pekerjaan,
                             alamatLengkap = alamatLengkap,
+
+                            // Atribut Spesifik Kematian
+                            umur = if (isKematian) umur else pengajuan.umur,
+                            pukulWafat = if (isKematian) pukulWafat else pengajuan.pukulWafat,
+                            hariWafat = if (isKematian) hariWafat else pengajuan.hariWafat,
+                            tanggalWafat = if (isKematian) tanggalWafat else pengajuan.tanggalWafat,
+                            tempatWafat = if (isKematian) tempatWafat else pengajuan.tempatWafat,
+                            pukulPemakaman = if (isKematian) pukulPemakaman else pengajuan.pukulPemakaman,
+                            hariPemakaman = if (isKematian) hariPemakaman else pengajuan.hariPemakaman,
+                            tanggalPemakaman = if (isKematian) tanggalPemakaman else pengajuan.tanggalPemakaman,
+                            tempatPemakaman = if (isKematian) tempatPemakaman else pengajuan.tempatPemakaman,
+                            namaPelapor = if (isKematian) namaPelapor else pengajuan.namaPelapor,
+                            nikPelapor = if (isKematian) nikPelapor else pengajuan.nikPelapor,
+                            alamatPelapor = if (isKematian) alamatPelapor else pengajuan.alamatPelapor,
+
                             namaUsaha = finalNamaUsaha,
                             lokasiUsaha = finalLokasiUsaha,
                             nomorSurat = nomorSurat.ifBlank { "-" },

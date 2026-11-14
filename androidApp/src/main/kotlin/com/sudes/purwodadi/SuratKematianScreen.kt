@@ -178,7 +178,7 @@ fun SuratKematianScreen(
     // State Data Diri Almarhum / Almarhumah
     var namaAlmarhum by remember { mutableStateOf(existingItem?.namaPemohon ?: if (savedNamaAlmarhum.isNotBlank()) savedNamaAlmarhum else "") }
     var nikAlmarhum by remember { mutableStateOf(existingItem?.nik ?: if (savedNikAlmarhum.isNotBlank()) savedNikAlmarhum else "") }
-    var umur by remember { mutableStateOf(savedUmur) }
+    var umur by remember { mutableStateOf(existingItem?.umur?.takeIf { it.isNotBlank() } ?: if (savedUmur.isNotBlank()) savedUmur else "") }
     var tempatTanggalLahir by remember { mutableStateOf(existingItem?.tempatTanggalLahir ?: if (savedTtl.isNotBlank()) savedTtl else "") }
     var jenisKelamin by remember { mutableStateOf(existingItem?.jenisKelamin ?: if (savedJk.isNotBlank()) savedJk else "") }
     var agama by remember { mutableStateOf(existingItem?.agama ?: if (savedAgama.isNotBlank()) savedAgama else "") }
@@ -189,21 +189,21 @@ fun SuratKematianScreen(
     var isAutoFilled by remember { mutableStateOf(false) }
 
     // State Detail Kematian (Waktu & Tempat)
-    var pukulWafat by remember { mutableStateOf(savedPukulWafat) }
-    var hariWafat by remember { mutableStateOf(savedHariWafat) }
-    var tanggalWafat by remember { mutableStateOf(savedTanggalWafat) }
-    var tempatWafat by remember { mutableStateOf(savedTempatWafat) }
+    var pukulWafat by remember { mutableStateOf(existingItem?.pukulWafat ?: if (savedPukulWafat.isNotBlank()) savedPukulWafat else "") }
+    var hariWafat by remember { mutableStateOf(existingItem?.hariWafat ?: if (savedHariWafat.isNotBlank()) savedHariWafat else "") }
+    var tanggalWafat by remember { mutableStateOf(existingItem?.tanggalWafat ?: if (savedTanggalWafat.isNotBlank()) savedTanggalWafat else "") }
+    var tempatWafat by remember { mutableStateOf(existingItem?.tempatWafat ?: if (savedTempatWafat.isNotBlank()) savedTempatWafat else "") }
 
     // State Detail Pemakaman
-    var pukulPemakaman by remember { mutableStateOf(savedPukulPemakaman) }
-    var hariPemakaman by remember { mutableStateOf(savedHariPemakaman) }
-    var tanggalPemakaman by remember { mutableStateOf(savedTanggalPemakaman) }
-    var tempatPemakaman by remember { mutableStateOf(savedTempatPemakaman) }
+    var pukulPemakaman by remember { mutableStateOf(existingItem?.pukulPemakaman ?: if (savedPukulPemakaman.isNotBlank()) savedPukulPemakaman else "") }
+    var hariPemakaman by remember { mutableStateOf(existingItem?.hariPemakaman ?: if (savedHariPemakaman.isNotBlank()) savedHariPemakaman else "") }
+    var tanggalPemakaman by remember { mutableStateOf(existingItem?.tanggalPemakaman ?: if (savedTanggalPemakaman.isNotBlank()) savedTanggalPemakaman else "") }
+    var tempatPemakaman by remember { mutableStateOf(existingItem?.tempatPemakaman ?: if (savedTempatPemakaman.isNotBlank()) savedTempatPemakaman else "") }
 
     // State Data Pelapor
-    var namaPelapor by remember { mutableStateOf(savedNamaPelapor) }
-    var nikPelapor by remember { mutableStateOf(savedNikPelapor) }
-    var alamatPelapor by remember { mutableStateOf(savedAlamatPelapor) }
+    var namaPelapor by remember { mutableStateOf(existingItem?.namaPelapor ?: if (savedNamaPelapor.isNotBlank()) savedNamaPelapor else "") }
+    var nikPelapor by remember { mutableStateOf(existingItem?.nikPelapor ?: if (savedNikPelapor.isNotBlank()) savedNikPelapor else "") }
+    var alamatPelapor by remember { mutableStateOf(existingItem?.alamatPelapor ?: if (savedAlamatPelapor.isNotBlank()) savedAlamatPelapor else "") }
     var hubunganPelapor by remember { mutableStateOf(existingItem?.namaUsaha ?: if (savedHubunganPelapor.isNotBlank()) savedHubunganPelapor else "") }
 
     // State Lampiran File Pengantar RT
@@ -285,16 +285,27 @@ fun SuratKematianScreen(
                 isSubmittedSuccess = false
                 onSubmitPengajuan(
                     createKematianPengajuanItem(
-                        nama = namaAlmarhum,
-                        nik = nikAlmarhum,
+                        namaAlmarhum = namaAlmarhum,
+                        nikAlmarhum = nikAlmarhum,
+                        umur = umur,
                         ttl = tempatTanggalLahir,
                         jk = jenisKelamin,
                         agama = agama,
                         statusPerkawinan = statusPerkawinan,
                         pekerjaan = pekerjaan,
-                        alamat = alamatAlmarhum,
-                        hubungan = hubunganPelapor,
-                        detailKematian = "Wafat: $hariWafat, $tanggalWafat Pukul $pukulWafat di $tempatWafat",
+                        alamatAlmarhum = alamatAlmarhum,
+                        pukulWafat = pukulWafat,
+                        hariWafat = hariWafat,
+                        tanggalWafat = tanggalWafat,
+                        tempatWafat = tempatWafat,
+                        pukulPemakaman = pukulPemakaman,
+                        hariPemakaman = hariPemakaman,
+                        tanggalPemakaman = tanggalPemakaman,
+                        tempatPemakaman = tempatPemakaman,
+                        namaPelapor = namaPelapor,
+                        nikPelapor = nikPelapor,
+                        alamatPelapor = alamatPelapor,
+                        hubunganPelapor = hubunganPelapor,
                         uri = pengantarUri
                     )
                 )
@@ -358,7 +369,7 @@ fun SuratKematianScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // TOMBOL ISI OTOMATIS DARI PROFIL (UNTUK PELAPOR / DATA DASAR)
+            // TOMBOL ISI OTOMATIS DARI PROFIL (UNTUK PELAPOR)
             Surface(
                 onClick = {
                     isAutoFilled = !isAutoFilled
@@ -803,16 +814,27 @@ fun SuratKematianScreen(
                         clearDraftSuratKematian(context)
                         onSubmitPengajuan(
                             createKematianPengajuanItem(
-                                nama = namaAlmarhum,
-                                nik = nikAlmarhum,
+                                namaAlmarhum = namaAlmarhum,
+                                nikAlmarhum = nikAlmarhum,
+                                umur = umur,
                                 ttl = tempatTanggalLahir,
                                 jk = jenisKelamin,
                                 agama = agama,
                                 statusPerkawinan = statusPerkawinan,
                                 pekerjaan = pekerjaan,
-                                alamat = alamatAlmarhum,
-                                hubungan = hubunganPelapor,
-                                detailKematian = "Wafat: $hariWafat, $tanggalWafat Pukul $pukulWafat di $tempatWafat",
+                                alamatAlmarhum = alamatAlmarhum,
+                                pukulWafat = pukulWafat,
+                                hariWafat = hariWafat,
+                                tanggalWafat = tanggalWafat,
+                                tempatWafat = tempatWafat,
+                                pukulPemakaman = pukulPemakaman,
+                                hariPemakaman = hariPemakaman,
+                                tanggalPemakaman = tanggalPemakaman,
+                                tempatPemakaman = tempatPemakaman,
+                                namaPelapor = namaPelapor,
+                                nikPelapor = nikPelapor,
+                                alamatPelapor = alamatPelapor,
+                                hubunganPelapor = hubunganPelapor,
                                 uri = pengantarUri
                             )
                         )
@@ -828,36 +850,65 @@ fun SuratKematianScreen(
     }
 }
 
-// Fungsi bantu pembuat objek PengajuanItem khusus Kematian
+// Fungsi bantu pembuat objek PengajuanItem khusus Kematian dengan seluruh atribut terpisah
 private fun createKematianPengajuanItem(
-    nama: String,
-    nik: String,
+    namaAlmarhum: String,
+    nikAlmarhum: String,
+    umur: String,
     ttl: String,
     jk: String,
     agama: String,
     statusPerkawinan: String,
     pekerjaan: String,
-    alamat: String,
-    hubungan: String,
-    detailKematian: String,
+    alamatAlmarhum: String,
+    pukulWafat: String,
+    hariWafat: String,
+    tanggalWafat: String,
+    tempatWafat: String,
+    pukulPemakaman: String,
+    hariPemakaman: String,
+    tanggalPemakaman: String,
+    tempatPemakaman: String,
+    namaPelapor: String,
+    nikPelapor: String,
+    alamatPelapor: String,
+    hubunganPelapor: String,
     uri: Uri?
 ): PengajuanItem {
     return PengajuanItem(
         id = System.currentTimeMillis().toString(),
         jenisSurat = "Surat Keterangan Kematian",
-        namaPemohon = nama.ifBlank { "Almarhum" },
+        namaPemohon = namaAlmarhum.ifBlank { "Almarhum" },
         tanggal = getKematianDateFormatted(),
         status = StatusPengajuan.PROSES,
         pesanStatus = "Berkas sedang dicek oleh perangkat desa",
-        nik = nik,
+        nik = nikAlmarhum,
+        umur = umur,
         tempatTanggalLahir = ttl,
         jenisKelamin = jk.ifBlank { "Laki-laki" },
         agama = agama,
         statusPerkawinan = statusPerkawinan,
         pekerjaan = pekerjaan,
-        alamatLengkap = alamat,
-        namaUsaha = hubungan,       // Menampung hubungan pelapor dengan almarhum
-        lokasiUsaha = detailKematian, // Menampung detail waktu dan tempat wafat
+        alamatLengkap = alamatAlmarhum,
+
+        // Atribut Spesifik Waktu & Tempat Wafat (Terpisah)
+        pukulWafat = pukulWafat,
+        hariWafat = hariWafat,
+        tanggalWafat = tanggalWafat,
+        tempatWafat = tempatWafat,
+
+        // Atribut Spesifik Detail Pemakaman (Terpisah)
+        pukulPemakaman = pukulPemakaman,
+        hariPemakaman = hariPemakaman,
+        tanggalPemakaman = tanggalPemakaman,
+        tempatPemakaman = tempatPemakaman,
+
+        // Atribut Spesifik Data Pelapor
+        namaPelapor = namaPelapor,
+        nikPelapor = nikPelapor,
+        alamatPelapor = alamatPelapor,
+        namaUsaha = hubunganPelapor, // Hubungan dengan almarhum
+
         pengantarUri = uri?.toString() ?: "",
         nomorSurat = "-"
     )

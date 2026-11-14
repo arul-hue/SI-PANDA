@@ -6,12 +6,12 @@ enum class StatusPengajuan {
 
 data class PengajuanItem(
     val id: String = "",
-    val jenisSurat: String,
-    val namaPemohon: String,
-    val tanggal: String,
+    val jenisSurat: String = "",
+    val namaPemohon: String = "",
+    val tanggal: String = "",
     val tanggalKeputusan: String = "",
-    val status: StatusPengajuan,
-    val pesanStatus: String,
+    val status: StatusPengajuan = StatusPengajuan.PROSES,
+    val pesanStatus: String = "",
     val nik: String = "",
     val tempatTanggalLahir: String = "",
     val jenisKelamin: String = "",
@@ -19,8 +19,25 @@ data class PengajuanItem(
     val statusPerkawinan: String = "",
     val pekerjaan: String = "",
     val alamatLengkap: String = "",
-    val namaUsaha: String = "",
-    val lokasiUsaha: String = "",
+
+    // Atribut Tambahan / Spesifik Surat Kematian (Aman dari null reference)
+    val umur: String = "",
+    val pukulWafat: String = "",
+    val hariWafat: String = "",
+    val tanggalWafat: String = "",
+    val tempatWafat: String = "",
+    val pukulPemakaman: String = "",
+    val hariPemakaman: String = "",
+    val tanggalPemakaman: String = "",
+    val tempatPemakaman: String = "",
+    val namaPelapor: String = "",
+    val nikPelapor: String = "",
+    val alamatPelapor: String = "",
+
+    // Properti generik untuk kompatibilitas surat lain
+    val namaUsaha: String = "",          // Menampung Hubungan Pelapor pada Surat Kematian
+    val lokasiUsaha: String = "",        // Cadangan deskripsi
+
     val pengantarUri: String = "",
     val nomorSurat: String = "-"
 )
