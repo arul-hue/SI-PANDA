@@ -40,8 +40,8 @@ fun AdminDetailPengajuanScreen(
         pengajuanItem.tanggal.ifBlank { "Waktu tidak tersedia" }
     }
 
-    // 2. Waktu keputusan admin (langkah 2) - Tidak melakukan fallback ke tanggal pengajuan agar nilainya independen
-    val formatWaktuKeputusan = remember(pengajuanItem.tanggalKeputusan) {
+    // 2. Waktu keputusan admin (langkah 2) - Disamakan menjadi tanggalKeputusan
+    val tanggalKeputusan = remember(pengajuanItem.tanggalKeputusan) {
         pengajuanItem.tanggalKeputusan
     }
 
@@ -155,7 +155,7 @@ fun AdminDetailPengajuanScreen(
                             )
                             TimelineStepItem(
                                 title = "2. Selesai — Surat dapat diambil di Balai Desa",
-                                date = formatWaktuKeputusan.ifBlank { "Selesai" }, // Waktu presisi saat admin menyetujui
+                                date = if (tanggalKeputusan.isNotBlank()) tanggalKeputusan else "Selesai", // Waktu presisi saat admin menyetujui
                                 isCompleted = true,
                                 isProcess = false,
                                 showLine = false
@@ -171,7 +171,7 @@ fun AdminDetailPengajuanScreen(
                             )
                             TimelineStepItem(
                                 title = "2. Ditolak — Pengajuan perlu diperbaiki",
-                                date = formatWaktuKeputusan.ifBlank { "Ditolak" }, // Waktu presisi saat admin menolak
+                                date = if (tanggalKeputusan.isNotBlank()) tanggalKeputusan else "Ditolak", // Waktu presisi saat admin menolak
                                 isCompleted = true,
                                 isProcess = false,
                                 isRejected = true,
