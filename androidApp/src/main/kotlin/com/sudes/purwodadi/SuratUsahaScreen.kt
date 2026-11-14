@@ -518,20 +518,29 @@ fun SuratUsahaScreen(
             CardSection(title = "INFORMASI SURAT") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(text = "Nomor Surat (Diisi Admin)", style = AppTypography.Caption, color = TextSecondary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(text = "-", style = AppTypography.BodyRegular, color = TextPlaceholder)
                     }
-                    Column(horizontalAlignment = Alignment.End) {
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Disusun vertikal ke bawah agar tanggal dan "WIB" muat dalam satu kesatuan yang rapi
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(text = "Tanggal Pengajuan", style = AppTypography.Caption, color = TextSecondary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = getUsahaTodayFormatted(),
+                            text = getUsahaTodayFormatted(), // Format sudah kembali menggunakan "WIB"
                             style = AppTypography.LabelForm,
-                            color = GreenDesaPrimary
+                            color = GreenDesaPrimary,
+                            textAlign = TextAlign.End
                         )
                     }
                 }
