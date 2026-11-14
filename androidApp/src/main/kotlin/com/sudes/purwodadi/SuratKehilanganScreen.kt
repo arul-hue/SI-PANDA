@@ -234,10 +234,10 @@ fun SuratKehilanganScreen(
                         statusPerkawinan = statusPerkawinan,
                         pekerjaan = pekerjaan,
                         alamat = alamatLengkap,
-                        barangHilang = barangHilang,
                         hariKejadian = hariKejadian,
                         tanggalKejadian = tanggalKejadian,
                         jamKejadian = jamPerkiraanHilang,
+                        barangHilang = barangHilang,
                         uri = pengantarUri
                     )
                 )
@@ -720,10 +720,10 @@ fun SuratKehilanganScreen(
                                 statusPerkawinan = statusPerkawinan,
                                 pekerjaan = pekerjaan,
                                 alamat = alamatLengkap,
-                                barangHilang = barangHilang,
                                 hariKejadian = hariKejadian,
                                 tanggalKejadian = tanggalKejadian,
                                 jamKejadian = jamPerkiraanHilang,
+                                barangHilang = barangHilang,
                                 uri = pengantarUri
                             )
                         )
@@ -748,10 +748,10 @@ private fun createKehilanganPengajuanItem(
     statusPerkawinan: String,
     pekerjaan: String,
     alamat: String,
-    barangHilang: String,
     hariKejadian: String,
     tanggalKejadian: String,
     jamKejadian: String,
+    barangHilang: String,
     uri: Uri?
 ): PengajuanItem {
     return PengajuanItem(
@@ -769,10 +769,10 @@ private fun createKehilanganPengajuanItem(
         alamatLengkap = alamat,
 
         // Memetakan atribut spesifik kehilangan secara terpisah ke model
-        barangHilang = barangHilang,
         hariKejadian = hariKejadian,
         tanggalKejadian = tanggalKejadian,
         jamKejadian = jamKejadian,
+        barangHilang = barangHilang,
 
         pengantarUri = uri?.toString() ?: "",
         nomorSurat = "-"

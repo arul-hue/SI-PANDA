@@ -384,10 +384,10 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
 
                                                     // Atribut Kehilangan yang Dipisah
-                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } }),
                                                     DetailFieldItem("Hari Kejadian", pengajuanItem.hariKejadian.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Kejadian", pengajuanItem.tanggalKejadian.ifBlank { "-" }),
-                                                    DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" })
+                                                    DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" }),
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } })
                                                 )
                                             )
                                         }
@@ -617,10 +617,10 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
 
                                                     // Atribut Kehilangan yang Dipisah
-                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } }),
                                                     DetailFieldItem("Hari Kejadian", pengajuanItem.hariKejadian.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Kejadian", pengajuanItem.tanggalKejadian.ifBlank { "-" }),
-                                                    DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" })
+                                                    DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" }),
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } }),
                                                 )
                                             )
                                         }
