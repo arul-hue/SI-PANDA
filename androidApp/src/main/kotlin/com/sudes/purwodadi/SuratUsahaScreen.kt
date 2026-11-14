@@ -146,29 +146,30 @@ fun SuratUsahaScreen(
     var namaUsaha by remember { mutableStateOf(existingItem?.namaUsaha ?: if (savedUsaha.isNotBlank()) savedUsaha else "") }
     var lokasiUsaha by remember { mutableStateOf(existingItem?.lokasiUsaha ?: if (savedLokasi.isNotBlank()) savedLokasi else "") }
 
-    // State untuk Lampiran Berkas / Foto Surat Pengantar RT (Dipulihkan otomatis dari draft jika force back)
+    // State untuk Lampiran Berkas / Foto Surat Pengantar RT
+    // Prioritaskan existingItem saat resubmit, jika kosong baru ambil dari draft lokal
     val initialUri = existingItem?.pengantarUri?.takeIf { it.isNotBlank() } ?: if (savedUriStr.isNotBlank()) savedUriStr else null
     var pengantarUri by remember { mutableStateOf<Uri?>(initialUri?.let { Uri.parse(it) }) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    // OTOMATIS SIMPAN DRAFT KE HP SETIAP KALI ADA PERUBAHAN FORM ATAU FOTO TERLAMPIR
+    // OTOMATIS SIMPAN DRAFT KE HP (Aman untuk mode baru maupun resubmit)
     LaunchedEffect(namaLengkap, nik, tempatTanggalLahir, jenisKelamin, agama, statusPerkawinan, pekerjaan, alamatLengkap, namaUsaha, lokasiUsaha, pengantarUri) {
-        if (existingItem == null) {
-            saveDraftSuratUsaha(
-                context = context,
-                nama = namaLengkap,
-                nik = nik,
-                ttl = tempatTanggalLahir,
-                jk = jenisKelamin,
-                agama = agama,
-                statusPerkawinan = statusPerkawinan,
-                pekerjaan = pekerjaan,
-                alamat = alamatLengkap,
-                usaha = namaUsaha,
-                lokasi = lokasiUsaha,
-                uriString = pengantarUri?.toString() ?: ""
-            )
-        }
+        // Jika sedang resubmit, pastikan pengantarUri tidak menyimpan string kosong yang menimpa file lama
+        val uriToSave = pengantarUri?.toString() ?: existingItem?.pengantarUri ?: ""
+        saveDraftSuratUsaha(
+            context = context,
+            nama = namaLengkap,
+            nik = nik,
+            ttl = tempatTanggalLahir,
+            jk = jenisKelamin,
+            agama = agama,
+            statusPerkawinan = statusPerkawinan,
+            pekerjaan = pekerjaan,
+            alamat = alamatLengkap,
+            usaha = namaUsaha,
+            lokasi = lokasiUsaha,
+            uriString = uriToSave
+        )
     }
 
     // State untuk Dialog Pilihan Sumber Gambar (Kamera vs Galeri) & Preview Gambar
