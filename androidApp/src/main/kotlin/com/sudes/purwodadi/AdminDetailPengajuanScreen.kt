@@ -42,7 +42,7 @@ fun AdminDetailPengajuanScreen(
     val formatWaktuPengajuan = remember(pengajuanItem.id) {
         val millis = pengajuanItem.id.toLongOrNull()
         if (millis != null && millis > 1000000000L) {
-            val sdf = SimpleDateFormat("dd MMM yyyy, HH.mm 'WIB'", Locale("id", "ID"))
+            val sdf = SimpleDateFormat("dd MMMM yyyy, HH.mm 'WIB'", Locale("id", "ID"))
             sdf.format(Date(millis))
         } else {
             pengajuanItem.tanggal // Fallback jika ID bukan millis

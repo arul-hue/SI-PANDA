@@ -707,6 +707,6 @@ fun AdminEditTextField(
 
 // Fungsi helper untuk mendapatkan tanggal dan waktu saat ini berformat Indonesia
 fun getCurrentDateTime(): String {
-    val sdf = SimpleDateFormat("dd MMM yyyy, HH.mm 'WIB'", Locale("id", "ID"))
+    val sdf = SimpleDateFormat("dd MMMM yyyy, HH.mm 'WIB'", Locale("id", "ID"))
     return sdf.format(Date())
 }
