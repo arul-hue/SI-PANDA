@@ -451,8 +451,8 @@ fun SuratKematianScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // KARTU 2: DETAIL KEMATIAN (WAKTU & TEMPAT)
-            KematianCardSection(title = "DETAIL KEMATIAN (WAKTU & TEMPAT)") {
-                KematianFormTextField(label = "Pukul / Jam Wafat", value = pukulWafat, onValueChange = { pukulWafat = it }, placeholder = "Contoh: 08.00 WIB", isError = showErrorValidation && pukulWafat.isBlank())
+            KematianCardSection(title = "DETAIL KEMATIAN") {
+                KematianFormTextField(label = "Jam Wafat", value = pukulWafat, onValueChange = { pukulWafat = it }, placeholder = "Contoh: 08.00 WIB", isError = showErrorValidation && pukulWafat.isBlank())
                 KematianFormTextField(label = "Hari Wafat", value = hariWafat, onValueChange = { hariWafat = it }, placeholder = "Contoh: Kamis", isError = showErrorValidation && hariWafat.isBlank())
                 KematianFormTextField(label = "Tanggal Wafat", value = tanggalWafat, onValueChange = { tanggalWafat = it }, placeholder = "Contoh: 05 November 2026", isError = showErrorValidation && tanggalWafat.isBlank())
                 KematianFormTextField(label = "Tempat Wafat", value = tempatWafat, onValueChange = { tempatWafat = it }, placeholder = "Contoh: Rumah Kediaman / Rumah Sakit", isError = showErrorValidation && tempatWafat.isBlank())
@@ -462,7 +462,7 @@ fun SuratKematianScreen(
 
             // KARTU 3: DETAIL PEMAKAMAN
             KematianCardSection(title = "DETAIL PEMAKAMAN") {
-                KematianFormTextField(label = "Pukul Pemakaman", value = pukulPemakaman, onValueChange = { pukulPemakaman = it }, placeholder = "Contoh: 14.00 WIB", isError = showErrorValidation && pukulPemakaman.isBlank())
+                KematianFormTextField(label = "Jam Pemakaman", value = pukulPemakaman, onValueChange = { pukulPemakaman = it }, placeholder = "Contoh: 14.00 WIB", isError = showErrorValidation && pukulPemakaman.isBlank())
                 KematianFormTextField(label = "Hari Pemakaman", value = hariPemakaman, onValueChange = { hariPemakaman = it }, placeholder = "Contoh: Kamis", isError = showErrorValidation && hariPemakaman.isBlank())
                 KematianFormTextField(label = "Tanggal Pemakaman", value = tanggalPemakaman, onValueChange = { tanggalPemakaman = it }, placeholder = "Contoh: 05 November 2026", isError = showErrorValidation && tanggalPemakaman.isBlank())
                 KematianFormTextField(label = "Tempat Pemakaman (TPU)", value = tempatPemakaman, onValueChange = { tempatPemakaman = it }, placeholder = "Contoh: TPU Desa Purwodadi Simpang", isError = showErrorValidation && tempatPemakaman.isBlank())
