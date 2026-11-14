@@ -131,6 +131,8 @@ fun AdminDetailPengajuanScreen(
                         style = AppTypography.HeadingMedium,
                         color = TextPrimary
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = BorderColor, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     when (pengajuanItem.status) {
@@ -225,15 +227,6 @@ fun AdminDetailPengajuanScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = "DATA PENGAJUAN WARGA",
-                        style = AppTypography.HeadingMedium,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider(color = BorderColor, thickness = 1.dp)
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     if (fields.isEmpty()) {
                         Text(
                             text = "Tidak ada data rinci yang tersedia.",
@@ -242,7 +235,18 @@ fun AdminDetailPengajuanScreen(
                         )
                     } else {
                         fields.forEach { field ->
-                            DetailItemRow(label = field.label, value = field.value)
+                            if (field.label == "---SECTION_HEADER---") {
+                                Text(
+                                    text = field.value,
+                                    style = AppTypography.HeadingMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            } else {
+                                DetailItemRow(label = field.label, value = field.value)
+                            }
                         }
                     }
 

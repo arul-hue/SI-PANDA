@@ -113,6 +113,8 @@ fun DetailPengajuanScreen(
                         style = AppTypography.HeadingMedium,
                         color = TextPrimary
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = BorderColor, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     when (status) {
@@ -209,15 +211,6 @@ fun DetailPengajuanScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = "DATA YANG ANDA INPUTKAN",
-                        style = AppTypography.HeadingMedium,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider(color = BorderColor, thickness = 1.dp)
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     if (fields.isEmpty()) {
                         Text(
                             text = "Tidak ada data formulir.",
@@ -226,7 +219,18 @@ fun DetailPengajuanScreen(
                         )
                     } else {
                         fields.forEach { field ->
-                            DetailItemRow(label = field.label, value = field.value)
+                            if (field.label == "---SECTION_HEADER---") {
+                                Text(
+                                    text = field.value,
+                                    style = AppTypography.HeadingMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            } else {
+                                DetailItemRow(label = field.label, value = field.value)
+                            }
                         }
                     }
 

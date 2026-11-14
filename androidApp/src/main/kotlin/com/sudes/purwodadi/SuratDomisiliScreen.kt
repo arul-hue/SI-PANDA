@@ -722,7 +722,6 @@ private fun createDomisiliPengajuanItem(
         tempatTanggalLahir = ttl,
         jenisKelamin = jk.ifBlank { "Laki-laki" },
         agama = agama,
-        statusPerkawinan = "-",
         pekerjaan = pekerjaan,
         alamatLengkap = alamat,
         namaUsaha = "-",

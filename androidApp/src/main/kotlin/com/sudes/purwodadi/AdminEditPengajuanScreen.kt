@@ -43,8 +43,10 @@ fun AdminEditPengajuanScreen(
     var alamatLengkap by remember { mutableStateOf(pengajuan.alamatLengkap) }
 
     // Cek Jenis Surat
+    val isUsaha = pengajuan.jenisSurat.contains("Usaha", ignoreCase = true)
     val isKematian = pengajuan.jenisSurat.contains("Kematian", ignoreCase = true)
     val isSktm = pengajuan.jenisSurat.contains("Tidak Mampu", ignoreCase = true)
+    val isDomisili = pengajuan.jenisSurat.contains("Domisili", ignoreCase = true)
 
     // State Khusus Kematian
     var umur by remember { mutableStateOf(pengajuan.umur) }
@@ -221,12 +223,14 @@ fun AdminEditPengajuanScreen(
                         onValueChange = { agama = it },
                         isError = showErrorValidation && agama.isBlank()
                     )
-                    AdminEditTextField(
-                        label = "Status Perkawinan",
-                        value = statusPerkawinan,
-                        onValueChange = { statusPerkawinan = it },
-                        isError = showErrorValidation && statusPerkawinan.isBlank()
-                    )
+                    if (!isDomisili) {
+                        AdminEditTextField(
+                            label = "Status Perkawinan",
+                            value = statusPerkawinan,
+                            onValueChange = { statusPerkawinan = it },
+                            isError = showErrorValidation && statusPerkawinan.isBlank()
+                        )
+                    }
                     AdminEditTextField(
                         label = if (isKematian) "Pekerjaan Terakhir" else "Pekerjaan",
                         value = pekerjaan,
