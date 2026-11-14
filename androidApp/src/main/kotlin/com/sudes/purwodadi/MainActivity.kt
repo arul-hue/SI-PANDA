@@ -472,24 +472,10 @@ class MainActivity : ComponentActivity() {
                         }
                         "admin_detail_pengajuan" -> {
                             if (selectedPengajuanItem != null) {
-                                // 👈 Langsung gunakan DetailPengajuanScreen yang sama persis dengan warga
-                                DetailPengajuanScreen(
-                                    jenisSurat = selectedJenisSurat,
-                                    status = selectedStatusSurat,
-                                    tanggalPengajuan = selectedPengajuanItem?.tanggal ?: "",
-                                    tanggalKeputusan = selectedPengajuanItem?.tanggalKeputusan ?: "",
-                                    alasanDitolak = selectedAlasanDitolak,
-                                    namaFileRt = if (!selectedPengajuanItem?.pengantarUri.isNullOrBlank()) "pengantar_rt_warga.jpg" else "Tidak ada lampiran",
-                                    pengantarUriString = selectedPengajuanItem?.pengantarUri ?: "",
+                                AdminDetailPengajuanScreen(
+                                    pengajuanItem = selectedPengajuanItem!!,
                                     fields = selectedFields,
-                                    onBackClicked = { currentScreen = "admin_dashboard" },
-                                    onResubmitClicked = { _ ->
-                                        // Tombol aksi bawah pada mode admin dialihkan untuk memicu form edit/verifikasi
-                                        if (selectedPengajuanItem != null) {
-                                            selectedJenisSurat = selectedPengajuanItem!!.jenisSurat
-                                            currentScreen = "admin_edit_pengajuan"
-                                        }
-                                    }
+                                    onBackClicked = { currentScreen = "admin_dashboard" }
                                 )
                             }
                         }
