@@ -393,7 +393,6 @@ fun SuratKematianScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = if (isAutoFilled) "✓  " else "⚡  ", style = AppTypography.HeadingMedium)
                     Text(
                         text = if (isAutoFilled) "Data Pelapor Terisi dari Profil" else "Isi Pelapor Otomatis dari Profil",
                         style = AppTypography.LabelForm.copy(color = if (isAutoFilled) Color.White else GreenDesaPrimary)

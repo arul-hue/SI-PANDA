@@ -333,7 +333,6 @@ fun SuratKehilanganScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = if (isAutoFilled) "✓  " else "⚡  ", style = AppTypography.HeadingMedium)
                     Text(
                         text = if (isAutoFilled) "Data Terisi Otomatis dari Profil" else "Isi Otomatis dari Profil",
                         style = AppTypography.LabelForm.copy(color = if (isAutoFilled) Color.White else GreenDesaPrimary)
