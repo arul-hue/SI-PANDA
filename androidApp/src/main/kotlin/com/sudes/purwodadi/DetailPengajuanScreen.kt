@@ -35,11 +35,11 @@ data class DetailFieldItem(
 fun DetailPengajuanScreen(
     jenisSurat: String = "Surat Keterangan Usaha",
     status: StatusPengajuan = StatusPengajuan.PROSES,
-    tanggalPengajuan: String = "03 Nov 2026, 09.15 WIB", // Waktu awal user mengajukan surat
-    tanggalKeputusan: String = tanggalPengajuan,       // Waktu saat admin menolak/menerima
+    tanggalPengajuan: String = "",
+    tanggalKeputusan: String = "", // 👈 Jangan samakan default-nya dengan tanggalPengajuan agar bisa dideteksi kosong/tidaknya
     alasanDitolak: String? = null,
     namaFileRt: String = "pengantar_rt.jpg",
-    pengantarUriString: String = "", // 👈 Menangkap URI file asli yang diunggah warga
+    pengantarUriString: String = "",
     fields: List<DetailFieldItem> = emptyList(),
     onBackClicked: () -> Unit = {},
     onResubmitClicked: (String) -> Unit = {}
@@ -142,7 +142,8 @@ fun DetailPengajuanScreen(
                             )
                             TimelineStepItem(
                                 title = "2. Selesai — Surat dapat diambil di Balai Desa",
-                                date = tanggalKeputusan, // Waktu saat admin menerima/menyetujui
+                                // 👈 Tampilkan tanggal keputusan jika ada, fallback ke teks statis jika kosong
+                                date = if (tanggalKeputusan.isNotBlank()) tanggalKeputusan else "Selesai",
                                 isCompleted = true,
                                 isProcess = false,
                                 showLine = false
@@ -158,7 +159,8 @@ fun DetailPengajuanScreen(
                             )
                             TimelineStepItem(
                                 title = "2. Ditolak — Pengajuan perlu diperbaiki",
-                                date = tanggalKeputusan, // Waktu saat admin menolak
+                                // 👈 Tampilkan tanggal keputusan jika ada, fallback ke teks statis jika kosong
+                                date = if (tanggalKeputusan.isNotBlank()) tanggalKeputusan else "Ditolak",
                                 isCompleted = true,
                                 isProcess = false,
                                 isRejected = true,

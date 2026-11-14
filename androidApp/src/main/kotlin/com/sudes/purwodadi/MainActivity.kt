@@ -472,6 +472,7 @@ class MainActivity : ComponentActivity() {
                                 jenisSurat = selectedJenisSurat,
                                 status = selectedStatusSurat,
                                 tanggalPengajuan = selectedPengajuanItem?.tanggal ?: "",
+                                tanggalKeputusan = selectedPengajuanItem?.tanggalKeputusan ?: "",
                                 alasanDitolak = selectedAlasanDitolak,
                                 namaFileRt = if (!selectedPengajuanItem?.pengantarUri.isNullOrBlank()) "pengantar_rt_warga.jpg" else "Tidak ada lampiran",
                                 pengantarUriString = selectedPengajuanItem?.pengantarUri ?: "",

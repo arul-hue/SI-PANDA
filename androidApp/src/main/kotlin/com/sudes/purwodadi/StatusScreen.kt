@@ -295,6 +295,13 @@ fun PengajuanCard(
     onDetailClicked: () -> Unit,
     onResubmitClicked: () -> Unit
 ) {
+    // 👈 Tentukan tanggal tampil: Jika tanggalKeputusan ada isinya, gunakan itu. Jika belum, gunakan tanggal awal pengajuan.
+    val displayDate = if (item.tanggalKeputusan.isNotBlank()) {
+        item.tanggalKeputusan
+    } else {
+        item.tanggal
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -313,7 +320,7 @@ fun PengajuanCard(
             ) {
                 StatusBadge(status = item.status)
                 Text(
-                    text = item.tanggal,
+                    text = displayDate, // 👈 Mengganti item.tanggal dengan variabel displayDate yang dinamis
                     style = AppTypography.Caption,
                     color = TextSecondary
                 )

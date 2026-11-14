@@ -353,6 +353,13 @@ fun AdminPengajuanCard(
     onSelesaikanClicked: () -> Unit,
     onDetailClicked: () -> Unit
 ) {
+    // 👈 Tentukan tanggal yang akan ditampilkan: Utamakan tanggalKeputusan jika sudah ada isinya
+    val displayDate = if (item.tanggalKeputusan.isNotBlank()) {
+        item.tanggalKeputusan
+    } else {
+        item.tanggal
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -371,7 +378,7 @@ fun AdminPengajuanCard(
             ) {
                 StatusBadge(status = item.status)
                 Text(
-                    text = item.tanggal,
+                    text = displayDate, // 👈 Menampilkan tanggal keputusan atau tanggal pengajuan dinamis
                     style = AppTypography.Caption,
                     color = TextSecondary
                 )

@@ -21,9 +21,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sudes.purwodadi.ui.theme.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun AdminDetailPengajuanScreen(
@@ -38,24 +35,14 @@ fun AdminDetailPengajuanScreen(
         onBackClicked()
     }
 
-    // Helper untuk mengubah ID berbasis millis (System.currentTimeMillis()) menjadi format tanggal jam warga mengajukan
+    // 1. Waktu pengajuan awal warga (langkah 1)
     val formatWaktuPengajuan = remember(pengajuanItem.id) {
-        val millis = pengajuanItem.id.toLongOrNull()
-        if (millis != null && millis > 1000000000L) {
-            val sdf = SimpleDateFormat("dd MMMM yyyy, HH.mm 'WIB'", Locale("id", "ID"))
-            sdf.format(Date(millis))
-        } else {
-            pengajuanItem.tanggal // Fallback jika ID bukan millis
-        }
+        pengajuanItem.tanggal.ifBlank { "Waktu tidak tersedia" }
     }
 
-    // Helper untuk memastikan tanggalKeputusan memiliki format yang konsisten berakhiran WIB
+    // 2. Waktu keputusan admin (langkah 2) - Tidak melakukan fallback ke tanggal pengajuan agar nilainya independen
     val formatWaktuKeputusan = remember(pengajuanItem.tanggalKeputusan) {
-        if (pengajuanItem.tanggalKeputusan.isNotBlank()) {
-            pengajuanItem.tanggalKeputusan
-        } else {
-            pengajuanItem.tanggal // Fallback jika tanggalKeputusan kosong
-        }
+        pengajuanItem.tanggalKeputusan
     }
 
     // Memetakan fields langsung dari properti PengajuanItem dengan aman
@@ -168,7 +155,7 @@ fun AdminDetailPengajuanScreen(
                             )
                             TimelineStepItem(
                                 title = "2. Selesai — Surat dapat diambil di Balai Desa",
-                                date = formatWaktuKeputusan, // 👈 Waktu presisi saat admin menerima/menyetujui
+                                date = formatWaktuKeputusan.ifBlank { "Selesai" }, // Waktu presisi saat admin menyetujui
                                 isCompleted = true,
                                 isProcess = false,
                                 showLine = false
@@ -184,7 +171,7 @@ fun AdminDetailPengajuanScreen(
                             )
                             TimelineStepItem(
                                 title = "2. Ditolak — Pengajuan perlu diperbaiki",
-                                date = formatWaktuKeputusan, // 👈 Waktu presisi saat admin menolak
+                                date = formatWaktuKeputusan.ifBlank { "Ditolak" }, // Waktu presisi saat admin menolak
                                 isCompleted = true,
                                 isProcess = false,
                                 isRejected = true,
