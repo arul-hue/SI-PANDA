@@ -235,7 +235,9 @@ fun SuratKehilanganScreen(
                         pekerjaan = pekerjaan,
                         alamat = alamatLengkap,
                         barangHilang = barangHilang,
-                        detailKejadian = "Hari: $hariKejadian, Tgl: $tanggalKejadian, Jam: $jamPerkiraanHilang",
+                        hariKejadian = hariKejadian,
+                        tanggalKejadian = tanggalKejadian,
+                        jamKejadian = jamPerkiraanHilang,
                         uri = pengantarUri
                     )
                 )
@@ -719,7 +721,9 @@ fun SuratKehilanganScreen(
                                 pekerjaan = pekerjaan,
                                 alamat = alamatLengkap,
                                 barangHilang = barangHilang,
-                                detailKejadian = "Hari: $hariKejadian, Tgl: $tanggalKejadian, Jam: $jamPerkiraanHilang",
+                                hariKejadian = hariKejadian,
+                                tanggalKejadian = tanggalKejadian,
+                                jamKejadian = jamPerkiraanHilang,
                                 uri = pengantarUri
                             )
                         )
@@ -745,25 +749,31 @@ private fun createKehilanganPengajuanItem(
     pekerjaan: String,
     alamat: String,
     barangHilang: String,
-    detailKejadian: String,
+    hariKejadian: String,
+    tanggalKejadian: String,
+    jamKejadian: String,
     uri: Uri?
 ): PengajuanItem {
     return PengajuanItem(
         id = System.currentTimeMillis().toString(),
         jenisSurat = "Surat Keterangan Kehilangan",
-        namaPemohon = nama.ifBlank { "Warga Pemohon" },
+        namaPemohon = nama.ifBlank { "Warga" },
         tanggal = getKehilanganDateFormatted(),
         status = StatusPengajuan.PROSES,
         pesanStatus = "Berkas sedang dicek oleh perangkat desa",
         nik = nik,
         tempatTanggalLahir = ttl,
-        jenisKelamin = "Laki-laki",
         agama = agama,
         statusPerkawinan = statusPerkawinan,
         pekerjaan = pekerjaan,
         alamatLengkap = alamat,
-        namaUsaha = barangHilang,       // Menampung keterangan barang/surat yang hilang
-        lokasiUsaha = detailKejadian,   // Menampung detail waktu/hari kejadian
+
+        // Memetakan atribut spesifik kehilangan secara terpisah ke model
+        barangHilang = barangHilang,
+        hariKejadian = hariKejadian,
+        tanggalKejadian = tanggalKejadian,
+        jamKejadian = jamKejadian,
+
         pengantarUri = uri?.toString() ?: "",
         nomorSurat = "-"
     )

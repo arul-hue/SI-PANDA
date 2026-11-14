@@ -20,7 +20,7 @@ data class PengajuanItem(
     val pekerjaan: String = "",
     val alamatLengkap: String = "",
 
-    // Atribut Tambahan / Spesifik Surat Kematian (Aman dari null reference)
+    // Atribut Spesifik Surat Kematian
     val umur: String = "",
     val pukulWafat: String = "",
     val hariWafat: String = "",
@@ -34,9 +34,15 @@ data class PengajuanItem(
     val nikPelapor: String = "",
     val alamatPelapor: String = "",
 
+    // Atribut Spesifik Surat Kehilangan (Baru ditambahkan & dipisah)
+    val barangHilang: String = "",
+    val hariKejadian: String = "",
+    val tanggalKejadian: String = "",
+    val jamKejadian: String = "",
+
     // Properti generik untuk kompatibilitas surat lain
-    val namaUsaha: String = "",          // Menampung Hubungan Pelapor pada Surat Kematian
-    val lokasiUsaha: String = "",        // Cadangan deskripsi
+    val namaUsaha: String = "",          // Menampung Hubungan Pelapor pada Kematian / Cadangan
+    val lokasiUsaha: String = "",        // Cadangan deskripsi / SKTM
 
     val pengantarUri: String = "",
     val nomorSurat: String = "-"

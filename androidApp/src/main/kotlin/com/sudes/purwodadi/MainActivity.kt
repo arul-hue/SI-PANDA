@@ -378,12 +378,16 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Nama Lengkap Pelapor", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK Pelapor", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
-                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.namaUsaha.ifBlank { "-" }),
-                                                    DetailFieldItem("Detail Waktu & Kejadian", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+
+                                                    // Atribut Kehilangan yang Dipisah
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } }),
+                                                    DetailFieldItem("Hari Kejadian", pengajuanItem.hariKejadian.ifBlank { "-" }),
+                                                    DetailFieldItem("Tanggal Kejadian", pengajuanItem.tanggalKejadian.ifBlank { "-" }),
+                                                    DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" })
                                                 )
                                             )
                                         }
@@ -607,12 +611,16 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Nama Lengkap Pelapor", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK Pelapor", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
-                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.namaUsaha.ifBlank { "-" }),
-                                                    DetailFieldItem("Detail Waktu & Kejadian", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+
+                                                    // Atribut Kehilangan yang Dipisah
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } }),
+                                                    DetailFieldItem("Hari Kejadian", pengajuanItem.hariKejadian.ifBlank { "-" }),
+                                                    DetailFieldItem("Tanggal Kejadian", pengajuanItem.tanggalKejadian.ifBlank { "-" }),
+                                                    DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" })
                                                 )
                                             )
                                         }
