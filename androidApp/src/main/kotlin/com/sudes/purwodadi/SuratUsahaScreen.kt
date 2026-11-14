@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.sudes.purwodadi.ui.theme.*
 import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -43,7 +45,29 @@ fun getUsahaTodayFormatted(): String {
     return sdf.format(Date())
 }
 
-// Fungsi helper pembuat file sementara untuk kamera
+// 👈 FUNGSI HELPER: Menyalin file ke direktori internal permanen agar tidak terhapus otomatis oleh sistem HP
+fun saveFilePermanently(context: Context, sourceUri: Uri): Uri? {
+    return try {
+        val inputStream: InputStream? = context.contentResolver.openInputStream(sourceUri)
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val permanentDir = File(context.filesDir, "surat_pengantar").apply {
+            if (!exists()) mkdirs()
+        }
+        val permanentFile = File(permanentDir, "PENGANTAR_${timeStamp}.jpg")
+
+        val outputStream = FileOutputStream(permanentFile)
+        inputStream?.copyTo(outputStream)
+        inputStream?.close()
+        outputStream.close()
+
+        Uri.fromFile(permanentFile)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+// Fungsi helper pembuat file sementara untuk kamera sebelum dipindahkan ke permanen
 fun createImageFile(context: Context): File {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
@@ -151,21 +175,23 @@ fun SuratUsahaScreen(
     var showImageSourceDialog by remember { mutableStateOf(false) }
     var showImagePreviewDialog by remember { mutableStateOf(false) }
 
-    // Launcher Galeri
+    // Launcher Galeri (Otomatis disimpan permanen begitu dipilih)
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            pengantarUri = uri
+            val permanentUri = saveFilePermanently(context, uri)
+            pengantarUri = permanentUri ?: uri
         }
     }
 
-    // Launcher Kamera
+    // Launcher Kamera (Otomatis disimpan permanen begitu diambil)
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success && tempCameraUri != null) {
-            pengantarUri = tempCameraUri
+            val permanentUri = saveFilePermanently(context, tempCameraUri!!)
+            pengantarUri = permanentUri ?: tempCameraUri
         }
     }
 
@@ -529,7 +555,6 @@ fun SuratUsahaScreen(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Disusun vertikal ke bawah agar tanggal dan "WIB" muat dalam satu kesatuan yang rapi
                     Column(
                         horizontalAlignment = Alignment.End,
                         modifier = Modifier.weight(1f)
@@ -537,7 +562,7 @@ fun SuratUsahaScreen(
                         Text(text = "Tanggal Pengajuan", style = AppTypography.Caption, color = TextSecondary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = getUsahaTodayFormatted(), // Format sudah kembali menggunakan "WIB"
+                            text = getUsahaTodayFormatted(),
                             style = AppTypography.LabelForm,
                             color = GreenDesaPrimary,
                             textAlign = TextAlign.End
@@ -803,7 +828,7 @@ fun SuratUsahaScreen(
                 Button(
                     onClick = {
                         isSubmittedSuccess = false
-                        clearDraftSuratUsaha(context) // Hapus draft lokal setelah berhasil dikirim secara permanen
+                        clearDraftSuratUsaha(context)
                         onSubmitPengajuan(
                             createPengajuanItem(
                                 nama = namaLengkap,
@@ -831,7 +856,7 @@ fun SuratUsahaScreen(
     }
 }
 
-// Fungsi bantu pembuat objek PengajuanItem (Selalu menghasilkan ID & tanggal baru untuk pengajuan/resubmit)
+// Fungsi bantu pembuat objek PengajuanItem
 private fun createPengajuanItem(
     nama: String,
     nik: String,
@@ -846,11 +871,11 @@ private fun createPengajuanItem(
     uri: Uri?
 ): PengajuanItem {
     return PengajuanItem(
-        id = System.currentTimeMillis().toString(), // 👈 Selalu buat ID baru berdasarkan waktu sekarang agar menjadi dokumen baru yang segar
+        id = System.currentTimeMillis().toString(),
         jenisSurat = "Surat Keterangan Usaha",
         namaPemohon = nama.ifBlank { "Warga Pemohon" },
-        tanggal = getUsahaTodayFormatted(),         // 👈 Otomatis menggunakan tanggal & jam hari ini
-        status = StatusPengajuan.PROSES,            // 👈 Status dikembalikan menjadi PROSES untuk antrean admin
+        tanggal = getUsahaTodayFormatted(),
+        status = StatusPengajuan.PROSES,
         pesanStatus = "Berkas sedang dicek oleh perangkat desa",
         nik = nik,
         tempatTanggalLahir = ttl,
@@ -891,7 +916,7 @@ fun CardSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     }
 }
 
-// Komponen Input TextField Standar dengan dukungan Error Merah
+// Komponen Input TextField Standar
 @Composable
 fun FormTextField(
     label: String,
@@ -936,7 +961,7 @@ fun FormTextField(
     }
 }
 
-// Komponen Dropdown Interaktif Khusus Surat Usaha dengan dukungan Error Merah
+// Komponen Dropdown Interaktif Khusus Surat Usaha
 @Composable
 fun SuratUsahaDropdownField(
     label: String,
