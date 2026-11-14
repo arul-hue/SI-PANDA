@@ -333,6 +333,106 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onDetailClicked = { pengajuanItem ->
                                     selectedPengajuanItem = pengajuanItem
+                                    selectedJenisSurat = pengajuanItem.jenisSurat
+                                    selectedStatusSurat = pengajuanItem.status
+                                    selectedAlasanDitolak = pengajuanItem.pesanStatus
+                                    selectedNamaFileRt = pengajuanItem.pengantarUri.ifBlank { "pengantar_rt.jpg" }
+
+                                    // 👇 PEMETAAN DINAMIS AGAR DATA DI ADMIN DETAIL TIDAK HILANG
+                                    val baseFields = mutableListOf<DetailFieldItem>()
+
+                                    when {
+                                        pengajuanItem.jenisSurat.contains("Usaha", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Nama / Deskripsi Usaha", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Lokasi Usaha", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Domisili", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap (KTP)", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Tempat Tinggal Saat Ini", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Kehilangan", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap Pelapor", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK Pelapor", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Detail Waktu & Kejadian", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Kematian", ignoreCase = true) -> {
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Almarhum / Almarhumah", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK Almarhum", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Almarhum", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Hubungan Pelapor", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Detail Waktu & Tempat Wafat", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                        pengajuanItem.jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> {
+                                            val savedLokasi = pengajuanItem.lokasiUsaha
+                                            val splitLokasi = savedLokasi.split(" | Keperluan: ")
+                                            val nomorKkVal = if (splitLokasi.isNotEmpty() && splitLokasi[0].startsWith("No. KK: ")) {
+                                                splitLokasi[0].removePrefix("No. KK: ")
+                                            } else {
+                                                "-"
+                                            }
+                                            val keperluanVal = if (splitLokasi.size > 1) splitLokasi[1] else savedLokasi
+
+                                            baseFields.addAll(
+                                                listOf(
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
+                                                    DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
+                                                    DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
+                                                    DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
+                                                    DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Nomor Kartu Keluarga (KK)", nomorKkVal),
+                                                    DetailFieldItem("Nama Kepala Keluarga (KK)", pengajuanItem.namaUsaha.ifBlank { "-" }),
+                                                    DetailFieldItem("Keperluan Surat", keperluanVal.ifBlank { "-" })
+                                                )
+                                            )
+                                        }
+                                    }
+                                    selectedFields = baseFields
+                                    // 👆 END PEMETAAN
+
                                     currentScreen = "admin_detail_pengajuan"
                                 },
                                 onSelesaikanClicked = { pengajuanItem ->
@@ -350,13 +450,23 @@ class MainActivity : ComponentActivity() {
                         }
                         "admin_detail_pengajuan" -> {
                             if (selectedPengajuanItem != null) {
-                                AdminDetailPengajuanScreen(
-                                    pengajuanItem = selectedPengajuanItem!!,
+                                // 👈 Langsung gunakan DetailPengajuanScreen yang sama persis dengan warga
+                                DetailPengajuanScreen(
+                                    jenisSurat = selectedJenisSurat,
+                                    status = selectedStatusSurat,
+                                    tanggalPengajuan = selectedPengajuanItem?.tanggal ?: "",
+                                    tanggalKeputusan = selectedPengajuanItem?.tanggalKeputusan ?: "",
+                                    alasanDitolak = selectedAlasanDitolak,
+                                    namaFileRt = if (!selectedPengajuanItem?.pengantarUri.isNullOrBlank()) "pengantar_rt_warga.jpg" else "Tidak ada lampiran",
+                                    pengantarUriString = selectedPengajuanItem?.pengantarUri ?: "",
+                                    fields = selectedFields,
                                     onBackClicked = { currentScreen = "admin_dashboard" },
-                                    onSelesaikanClicked = { pengajuanItem ->
-                                        selectedPengajuanItem = pengajuanItem
-                                        selectedJenisSurat = pengajuanItem.jenisSurat
-                                        currentScreen = "admin_edit_pengajuan"
+                                    onResubmitClicked = { _ ->
+                                        // Tombol aksi bawah pada mode admin dialihkan untuk memicu form edit/verifikasi
+                                        if (selectedPengajuanItem != null) {
+                                            selectedJenisSurat = selectedPengajuanItem!!.jenisSurat
+                                            currentScreen = "admin_edit_pengajuan"
+                                        }
                                     }
                                 )
                             }
