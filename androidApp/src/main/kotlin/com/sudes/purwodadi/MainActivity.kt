@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                 var selectedStatusFilter by remember { mutableStateOf("Semua") }
                 var selectedSortOrder by remember { mutableStateOf("Terbaru") }
 
-                // 👈 State untuk mempertahankan pilihan filter dan urutan waktu di AdminDashboardScreen (Admin)
+                // State untuk mempertahankan pilihan filter dan urutan waktu di AdminDashboardScreen (Admin)
                 var selectedAdminStatusFilter by remember { mutableStateOf("Semua") }
                 var selectedAdminSortOrder by remember { mutableStateOf("Terbaru") }
 
@@ -103,6 +103,7 @@ class MainActivity : ComponentActivity() {
                                             val jenisSurat = doc.getString("jenisSurat") ?: "Surat Keterangan Usaha"
                                             val namaPemohon = doc.getString("namaPemohon") ?: "Warga"
                                             val tanggal = doc.getString("tanggal") ?: ""
+                                            val tanggalKeputusan = doc.getString("tanggalKeputusan") ?: "" // 👈 DITAMBAHKAN AGAR TIDAK KOSONG
                                             val statusStr = doc.getString("status") ?: "PROSES"
                                             val status = try { StatusPengajuan.valueOf(statusStr) } catch (err: Exception) { StatusPengajuan.PROSES }
                                             val pesanStatus = doc.getString("pesanStatus") ?: "Pengajuan Anda sedang diproses."
@@ -124,6 +125,7 @@ class MainActivity : ComponentActivity() {
                                                 jenisSurat = jenisSurat,
                                                 namaPemohon = namaPemohon,
                                                 tanggal = tanggal,
+                                                tanggalKeputusan = tanggalKeputusan, // 👈 DIMASUKKAN KE OBJECT
                                                 status = status,
                                                 pesanStatus = pesanStatus,
                                                 nik = nik,
@@ -321,13 +323,13 @@ class MainActivity : ComponentActivity() {
                         "admin_dashboard" -> {
                             AdminDashboardScreen(
                                 listPengajuan = listPengajuan,
-                                selectedFilter = selectedAdminStatusFilter,        // 👈 Meneruskan filter status admin
+                                selectedFilter = selectedAdminStatusFilter,
                                 onFilterSelected = { newFilter ->
-                                    selectedAdminStatusFilter = newFilter           // 👈 Menyimpan filter status admin
+                                    selectedAdminStatusFilter = newFilter
                                 },
-                                selectedSort = selectedAdminSortOrder,             // 👈 Meneruskan urutan waktu admin
+                                selectedSort = selectedAdminSortOrder,
                                 onSortSelected = { newSort ->
-                                    selectedAdminSortOrder = newSort                // 👈 Menyimpan urutan waktu admin
+                                    selectedAdminSortOrder = newSort
                                 },
                                 onDetailClicked = { pengajuanItem ->
                                     selectedPengajuanItem = pengajuanItem
@@ -361,16 +363,14 @@ class MainActivity : ComponentActivity() {
                         }
                         "admin_edit_pengajuan" -> {
                             if (selectedPengajuanItem != null) {
-                                val oldId = selectedPengajuanItem!!.id // Simpan ID lama untuk dihapus
+                                val oldId = selectedPengajuanItem!!.id
                                 AdminEditPengajuanScreen(
                                     pengajuan = selectedPengajuanItem!!,
                                     onBackClicked = { currentScreen = "admin_dashboard" },
                                     onSaveSuccess = { updatedItem ->
-                                        // Simpan item baru dengan ID yang sudah diperbarui
                                         firestore.collection("pengajuan").document(updatedItem.id)
                                             .set(updatedItem)
                                             .addOnSuccessListener {
-                                                // Hapus dokumen lama jika ID-nya berubah agar data lama tidak menumpuk
                                                 if (oldId != updatedItem.id) {
                                                     firestore.collection("pengajuan").document(oldId).delete()
                                                 }
