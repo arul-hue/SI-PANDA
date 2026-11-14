@@ -505,6 +505,15 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
                                         pengajuanItem.jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> {
+                                            val savedLokasi = pengajuanItem.lokasiUsaha
+                                            val splitLokasi = savedLokasi.split(" | Keperluan: ")
+                                            val nomorKkVal = if (splitLokasi.isNotEmpty() && splitLokasi[0].startsWith("No. KK: ")) {
+                                                splitLokasi[0].removePrefix("No. KK: ")
+                                            } else {
+                                                "-"
+                                            }
+                                            val keperluanVal = if (splitLokasi.size > 1) splitLokasi[1] else savedLokasi
+
                                             baseFields.addAll(
                                                 listOf(
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
@@ -515,8 +524,9 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Nomor Kartu Keluarga (KK)", nomorKkVal),
                                                     DetailFieldItem("Nama Kepala Keluarga (KK)", pengajuanItem.namaUsaha.ifBlank { "-" }),
-                                                    DetailFieldItem("Keperluan Surat", pengajuanItem.lokasiUsaha.ifBlank { "-" })
+                                                    DetailFieldItem("Keperluan Surat", keperluanVal.ifBlank { "-" })
                                                 )
                                             )
                                         }

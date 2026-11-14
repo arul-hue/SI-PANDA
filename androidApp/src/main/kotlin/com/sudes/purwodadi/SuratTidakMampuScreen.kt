@@ -157,10 +157,16 @@ fun SuratTidakMampuScreen(
 
     var isAutoFilled by remember { mutableStateOf(false) }
 
-    // State Detail Keluarga & Keperluan (Disimpan di namaUsaha dan lokasiUsaha pada item)
-    var nomorKK by remember { mutableStateOf(savedNomorKK) }
+    // State Detail Keluarga & Keperluan
+    // Catatan: lokasiUsaha pada model item digunakan untuk menyimpan gabungan "No. KK: [nomorKK] | Keperluan: [keperluan]"
+    val existingLokasi = existingItem?.lokasiUsaha ?: ""
+    val splitLokasi = existingLokasi.split(" | Keperluan: ")
+    val defaultNoKK = if (splitLokasi.size > 0 && splitLokasi[0].startsWith("No. KK: ")) splitLokasi[0].removePrefix("No. KK: ") else savedNomorKK
+    val defaultKeperluan = if (splitLokasi.size > 1) splitLokasi[1] else (existingItem?.lokasiUsaha?.takeIf { !it.startsWith("No. KK: ") } ?: savedKeperluan)
+
+    var nomorKK by remember { mutableStateOf(defaultNoKK) }
     var namaKepalaKeluarga by remember { mutableStateOf(existingItem?.namaUsaha ?: if (savedNamaKK.isNotBlank()) savedNamaKK else "") }
-    var keperluanSurat by remember { mutableStateOf(existingItem?.lokasiUsaha ?: if (savedKeperluan.isNotBlank()) savedKeperluan else "") }
+    var keperluanSurat by remember { mutableStateOf(defaultKeperluan) }
 
     // State Lampiran File Pengantar RT
     val initialUri = existingItem?.pengantarUri?.takeIf { it.isNotBlank() } ?: if (savedUriStr.isNotBlank()) savedUriStr else null
@@ -234,6 +240,7 @@ fun SuratTidakMampuScreen(
                         statusPerkawinan = statusPerkawinan,
                         pekerjaan = pekerjaan,
                         alamat = alamatLengkap,
+                        nomorKK = nomorKK,
                         namaKK = namaKepalaKeluarga,
                         keperluan = keperluanSurat,
                         uri = pengantarUri
@@ -391,7 +398,7 @@ fun SuratTidakMampuScreen(
 
             // KARTU 2: DETAIL KELUARGA & KEPERLUAN
             SktmCardSection(title = "DETAIL KELUARGA & KEPERLUAN") {
-                SktmFormTextField(label = "Nomor Kartu Keluarga (KK)", value = nomorKK, onValueChange = { nomorKK = it }, placeholder = "Masukkan nomor KK", isError = showErrorValidation && nomorKK.isBlank())
+                SktmFormTextField(label = "Nomor Kartu Keluarga (KK)", value = nomorKK, onValueChange = { nomorKK = it }, placeholder = "Masukkan 16 digit nomor KK", isError = showErrorValidation && nomorKK.isBlank())
                 SktmFormTextField(label = "Nama Kepala Keluarga (di KK)", value = namaKepalaKeluarga, onValueChange = { namaKepalaKeluarga = it }, placeholder = "Contoh: Budi Santoso", isError = showErrorValidation && namaKepalaKeluarga.isBlank())
 
                 SktmFormTextField(
@@ -729,6 +736,7 @@ fun SuratTidakMampuScreen(
                                 statusPerkawinan = statusPerkawinan,
                                 pekerjaan = pekerjaan,
                                 alamat = alamatLengkap,
+                                nomorKK = nomorKK,
                                 namaKK = namaKepalaKeluarga,
                                 keperluan = keperluanSurat,
                                 uri = pengantarUri
@@ -756,6 +764,7 @@ private fun createSktmPengajuanItem(
     statusPerkawinan: String,
     pekerjaan: String,
     alamat: String,
+    nomorKK: String,
     namaKK: String,
     keperluan: String,
     uri: Uri?
@@ -774,8 +783,8 @@ private fun createSktmPengajuanItem(
         statusPerkawinan = statusPerkawinan,
         pekerjaan = pekerjaan,
         alamatLengkap = alamat,
-        namaUsaha = namaKK,       // Menampung Nama Kepala Keluarga
-        lokasiUsaha = keperluan,   // Menampung Keperluan Pembuatan Surat
+        namaUsaha = namaKK,       // Menampung Nama Kepala Keluarga di KK
+        lokasiUsaha = "No. KK: $nomorKK | Keperluan: $keperluan", // Menampung gabungan Nomor KK dan Keperluan
         pengantarUri = uri?.toString() ?: "",
         nomorSurat = "-"
     )
