@@ -9,6 +9,7 @@ data class PengajuanItem(
     val jenisSurat: String,
     val namaPemohon: String,
     val tanggal: String,
+    val tanggalKeputusan: String = "",
     val status: StatusPengajuan,
     val pesanStatus: String,
     val nik: String = "",

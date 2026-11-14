@@ -28,7 +28,7 @@ import java.util.Locale
 
 @Composable
 fun AdminEditPengajuanScreen(
-    pengajuan: PengajuanItem, // 👈 Menerima objek PengajuanItem asli dari inputan warga
+    pengajuan: PengajuanItem, // Menerima objek PengajuanItem asli dari inputan warga
     onBackClicked: () -> Unit = {},
     onSaveSuccess: (updatedItem: PengajuanItem) -> Unit = {}
 ) {
@@ -591,7 +591,13 @@ fun AdminEditPengajuanScreen(
                 Button(
                     onClick = {
                         showConfirmDialog = false
+
+                        // Buat ID baru berdasarkan waktu sistem saat ini agar posisinya naik ke atas saat diurutkan "Terbaru"
+                        val newId = System.currentTimeMillis().toString()
+                        val waktuKeputusan = getCurrentDateTime()
+
                         val updatedItem = pengajuan.copy(
+                            id = newId, // PENTING: Update ID agar sorting "Terbaru" mendeteksi aktivitas/keputusan terbaru
                             namaPemohon = nama,
                             nik = nik,
                             tempatTanggalLahir = ttl,
@@ -604,8 +610,8 @@ fun AdminEditPengajuanScreen(
                             lokasiUsaha = lokasiUsaha,
                             nomorSurat = nomorSurat.ifBlank { "-" },
                             status = if (isDiterima) StatusPengajuan.DITERIMA else StatusPengajuan.DITOLAK,
-                            pesanStatus = if (isDiterima) "Surat telah diterbitkan oleh kelurahan." else alasanDitolak,
-                            tanggal = getCurrentDateTime(), // Memperbarui waktu keputusan admin pada timeline
+                            pesanStatus = if (isDiterima) "Surat telah diterbitkan oleh perangkat desa. Silakan ambil di balai desa." else alasanDitolak,
+                            tanggalKeputusan = waktuKeputusan, // 👈 Mencatat jam persis saat admin memutuskan diterima/ditolak
                             pengantarUri = pengajuan.pengantarUri // Memastikan URI foto pengantar RT tidak hilang
                         )
                         onSaveSuccess(updatedItem)

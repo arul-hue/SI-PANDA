@@ -39,7 +39,7 @@ import java.util.Locale
 
 // Fungsi helper aman (kompatibel dengan API 24 ke atas) untuk format tanggal Indonesia
 fun getUsahaTodayFormatted(): String {
-    val sdf = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("id", "ID"))
+    val sdf = SimpleDateFormat("dd MMMM yyyy, HH:mm 'WIB'", Locale("id", "ID"))
     return sdf.format(Date())
 }
 
@@ -48,6 +48,31 @@ fun createImageFile(context: Context): File {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+}
+
+// Fungsi helper untuk menyimpan draft sementara ke SharedPreferences HP (Mencegah hilang saat force back)
+fun saveDraftSuratUsaha(context: Context, nama: String, nik: String, ttl: String, jk: String, agama: String, statusPerkawinan: String, pekerjaan: String, alamat: String, usaha: String, lokasi: String, uriString: String) {
+    val prefs = context.getSharedPreferences("DraftSuratUsahaPrefs", Context.MODE_PRIVATE)
+    prefs.edit().apply {
+        putString("nama", nama)
+        putString("nik", nik)
+        putString("ttl", ttl)
+        putString("jk", jk)
+        putString("agama", agama)
+        putString("statusPerkawinan", statusPerkawinan)
+        putString("pekerjaan", pekerjaan)
+        putString("alamat", alamat)
+        putString("namaUsaha", usaha)
+        putString("lokasiUsaha", lokasi)
+        putString("pengantarUri", uriString)
+        apply()
+    }
+}
+
+// Fungsi helper untuk menghapus draft jika pengajuan sudah sukses terkirim
+fun clearDraftSuratUsaha(context: Context) {
+    val prefs = context.getSharedPreferences("DraftSuratUsahaPrefs", Context.MODE_PRIVATE)
+    prefs.edit().clear().apply()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,27 +90,62 @@ fun SuratUsahaScreen(
     onSubmitPengajuan: (PengajuanItem) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val draftPrefs = remember { context.getSharedPreferences("DraftSuratUsahaPrefs", Context.MODE_PRIVATE) }
 
-    // State Form Data Pelaku Usaha (Diisi otomatis jika existingItem tersedia, termasuk statusPerkawinan)
-    var namaLengkap by remember { mutableStateOf(existingItem?.namaPemohon ?: "") }
-    var nik by remember { mutableStateOf(existingItem?.nik ?: "") }
-    var tempatTanggalLahir by remember { mutableStateOf(existingItem?.tempatTanggalLahir ?: "") }
-    var jenisKelamin by remember { mutableStateOf(existingItem?.jenisKelamin ?: "") }
-    var agama by remember { mutableStateOf(existingItem?.agama ?: "") }
-    var statusPerkawinan by remember { mutableStateOf(existingItem?.statusPerkawinan ?: "") }
-    var pekerjaan by remember { mutableStateOf(existingItem?.pekerjaan ?: "") }
-    var alamatLengkap by remember { mutableStateOf(existingItem?.alamatLengkap ?: "") }
+    // Membaca data draft yang tersimpan di lokal HP (jika ada)
+    val savedNama = draftPrefs.getString("nama", "") ?: ""
+    val savedNik = draftPrefs.getString("nik", "") ?: ""
+    val savedTtl = draftPrefs.getString("ttl", "") ?: ""
+    val savedJk = draftPrefs.getString("jk", "") ?: ""
+    val savedAgama = draftPrefs.getString("agama", "") ?: ""
+    val savedStatus = draftPrefs.getString("statusPerkawinan", "") ?: ""
+    val savedPekerjaan = draftPrefs.getString("pekerjaan", "") ?: ""
+    val savedAlamat = draftPrefs.getString("alamat", "") ?: ""
+    val savedUsaha = draftPrefs.getString("namaUsaha", "") ?: ""
+    val savedLokasi = draftPrefs.getString("lokasiUsaha", "") ?: ""
+    val savedUriStr = draftPrefs.getString("pengantarUri", "") ?: ""
+
+    // State Form Data Pelaku Usaha (Diprioritaskan: existingItem -> draft lokal -> kosong)
+    var namaLengkap by remember { mutableStateOf(existingItem?.namaPemohon ?: if (savedNama.isNotBlank()) savedNama else "") }
+    var nik by remember { mutableStateOf(existingItem?.nik ?: if (savedNik.isNotBlank()) savedNik else "") }
+    var tempatTanggalLahir by remember { mutableStateOf(existingItem?.tempatTanggalLahir ?: if (savedTtl.isNotBlank()) savedTtl else "") }
+    var jenisKelamin by remember { mutableStateOf(existingItem?.jenisKelamin ?: if (savedJk.isNotBlank()) savedJk else "") }
+    var agama by remember { mutableStateOf(existingItem?.agama ?: if (savedAgama.isNotBlank()) savedAgama else "") }
+    var statusPerkawinan by remember { mutableStateOf(existingItem?.statusPerkawinan ?: if (savedStatus.isNotBlank()) savedStatus else "") }
+    var pekerjaan by remember { mutableStateOf(existingItem?.pekerjaan ?: if (savedPekerjaan.isNotBlank()) savedPekerjaan else "") }
+    var alamatLengkap by remember { mutableStateOf(existingItem?.alamatLengkap ?: if (savedAlamat.isNotBlank()) savedAlamat else "") }
 
     // State untuk toggle tombol Isi Otomatis dari Profil
-    var isAutoFilled by remember { mutableStateOf(existingItem != null) }
+    var isAutoFilled by remember { mutableStateOf(false) }
 
-    // State Detail Usaha (Diisi otomatis jika existingItem tersedia)
-    var namaUsaha by remember { mutableStateOf(existingItem?.namaUsaha ?: "") }
-    var lokasiUsaha by remember { mutableStateOf(existingItem?.lokasiUsaha ?: "") }
+    // State Detail Usaha
+    var namaUsaha by remember { mutableStateOf(existingItem?.namaUsaha ?: if (savedUsaha.isNotBlank()) savedUsaha else "") }
+    var lokasiUsaha by remember { mutableStateOf(existingItem?.lokasiUsaha ?: if (savedLokasi.isNotBlank()) savedLokasi else "") }
 
-    // State untuk Lampiran Berkas / Foto Surat Pengantar RT
-    var pengantarUri by remember { mutableStateOf<Uri?>(existingItem?.pengantarUri?.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }) }
+    // State untuk Lampiran Berkas / Foto Surat Pengantar RT (Dipulihkan otomatis dari draft jika force back)
+    val initialUri = existingItem?.pengantarUri?.takeIf { it.isNotBlank() } ?: if (savedUriStr.isNotBlank()) savedUriStr else null
+    var pengantarUri by remember { mutableStateOf<Uri?>(initialUri?.let { Uri.parse(it) }) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    // OTOMATIS SIMPAN DRAFT KE HP SETIAP KALI ADA PERUBAHAN FORM ATAU FOTO TERLAMPIR
+    LaunchedEffect(namaLengkap, nik, tempatTanggalLahir, jenisKelamin, agama, statusPerkawinan, pekerjaan, alamatLengkap, namaUsaha, lokasiUsaha, pengantarUri) {
+        if (existingItem == null) {
+            saveDraftSuratUsaha(
+                context = context,
+                nama = namaLengkap,
+                nik = nik,
+                ttl = tempatTanggalLahir,
+                jk = jenisKelamin,
+                agama = agama,
+                statusPerkawinan = statusPerkawinan,
+                pekerjaan = pekerjaan,
+                alamat = alamatLengkap,
+                usaha = namaUsaha,
+                lokasi = lokasiUsaha,
+                uriString = pengantarUri?.toString() ?: ""
+            )
+        }
+    }
 
     // State untuk Dialog Pilihan Sumber Gambar (Kamera vs Galeri) & Preview Gambar
     var showImageSourceDialog by remember { mutableStateOf(false) }
@@ -138,7 +198,6 @@ fun SuratUsahaScreen(
                 isSubmittedSuccess = false
                 onSubmitPengajuan(
                     createPengajuanItem(
-                        existingId = existingItem?.id,
                         nama = namaLengkap,
                         nik = nik,
                         ttl = tempatTanggalLahir,
@@ -245,14 +304,14 @@ fun SuratUsahaScreen(
                         pekerjaan = initialPekerjaan.takeIf { it != "-" && it.isNotBlank() } ?: ""
                         alamatLengkap = initialAlamat.takeIf { it != "-" && it.isNotBlank() } ?: ""
                     } else {
-                        namaLengkap = ""
-                        nik = ""
-                        tempatTanggalLahir = ""
-                        jenisKelamin = ""
-                        agama = ""
-                        statusPerkawinan = ""
-                        pekerjaan = ""
-                        alamatLengkap = ""
+                        namaLengkap = existingItem?.namaPemohon ?: ""
+                        nik = existingItem?.nik ?: ""
+                        tempatTanggalLahir = existingItem?.tempatTanggalLahir ?: ""
+                        jenisKelamin = existingItem?.jenisKelamin ?: ""
+                        agama = existingItem?.agama ?: ""
+                        statusPerkawinan = existingItem?.statusPerkawinan ?: ""
+                        pekerjaan = existingItem?.pekerjaan ?: ""
+                        alamatLengkap = existingItem?.alamatLengkap ?: ""
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -735,9 +794,9 @@ fun SuratUsahaScreen(
                 Button(
                     onClick = {
                         isSubmittedSuccess = false
+                        clearDraftSuratUsaha(context) // Hapus draft lokal setelah berhasil dikirim secara permanen
                         onSubmitPengajuan(
                             createPengajuanItem(
-                                existingId = existingItem?.id,
                                 nama = namaLengkap,
                                 nik = nik,
                                 ttl = tempatTanggalLahir,
@@ -763,9 +822,8 @@ fun SuratUsahaScreen(
     }
 }
 
-// Fungsi bantu pembuat objek PengajuanItem (Lengkap dengan seluruh data form)
+// Fungsi bantu pembuat objek PengajuanItem (Selalu menghasilkan ID & tanggal baru untuk pengajuan/resubmit)
 private fun createPengajuanItem(
-    existingId: String? = null,
     nama: String,
     nik: String,
     ttl: String,
@@ -779,11 +837,11 @@ private fun createPengajuanItem(
     uri: Uri?
 ): PengajuanItem {
     return PengajuanItem(
-        id = existingId ?: System.currentTimeMillis().toString(),
+        id = System.currentTimeMillis().toString(), // 👈 Selalu buat ID baru berdasarkan waktu sekarang agar menjadi dokumen baru yang segar
         jenisSurat = "Surat Keterangan Usaha",
         namaPemohon = nama.ifBlank { "Warga Pemohon" },
-        tanggal = getUsahaTodayFormatted(),
-        status = StatusPengajuan.PROSES,
+        tanggal = getUsahaTodayFormatted(),         // 👈 Otomatis menggunakan tanggal & jam hari ini
+        status = StatusPengajuan.PROSES,            // 👈 Status dikembalikan menjadi PROSES untuk antrean admin
         pesanStatus = "Berkas sedang dicek oleh perangkat desa",
         nik = nik,
         tempatTanggalLahir = ttl,

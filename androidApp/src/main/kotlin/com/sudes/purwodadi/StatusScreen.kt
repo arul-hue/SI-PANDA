@@ -23,17 +23,16 @@ import com.sudes.purwodadi.ui.theme.*
 @Composable
 fun StatusScreen(
     listPengajuan: List<PengajuanItem> = emptyList(), // Menerima list data real-time dari MainActivity
+    selectedFilter: String = "Semua",                 // 👈 Menerima state filter status dari MainActivity
+    onFilterSelected: (String) -> Unit = {},          // 👈 Callback saat pilihan filter status diubah
+    selectedSort: String = "Terbaru",                 // 👈 Menerima state urutan waktu dari MainActivity
+    onSortSelected: (String) -> Unit = {},            // 👈 Callback saat pilihan urutan waktu diubah
     onTabSelected: (Int) -> Unit = {},
     onDetailClicked: (PengajuanItem) -> Unit = {},    // Mengirimkan objek PengajuanItem lengkap
-    onResubmitClicked: (PengajuanItem) -> Unit = {}   // 👈 Diperbaiki menerima PengajuanItem secara utuh
+    onResubmitClicked: (PengajuanItem) -> Unit = {}   // Menerima PengajuanItem secara utuh
 ) {
     var selectedTab by remember { mutableStateOf(1) } // Tab Status aktif di indeks 1
     var searchQuery by remember { mutableStateOf("") }
-
-    var selectedStatusFilter by remember { mutableStateOf("Semua") }
-
-    // 👈 Diubah default-nya menjadi "Terbaru" agar data terbaru tampil paling atas secara default
-    var selectedSortOrder by remember { mutableStateOf("Terbaru") }
 
     val scrollState = rememberScrollState()
     val sortScrollState = rememberScrollState()
@@ -45,11 +44,11 @@ fun StatusScreen(
     val diterimaCount = listPengajuan.count { it.status == StatusPengajuan.DITERIMA }
     val ditolakCount = listPengajuan.count { it.status == StatusPengajuan.DITOLAK }
 
-    // Logika Filter Status & Pencarian, diikuti dengan Sorting Berdasarkan Waktu
+    // Logika Filter Status & Pencarian menggunakan parameter dari MainActivity, diikuti dengan Sorting Berdasarkan Waktu
     val filteredList = listPengajuan.filter { item ->
         val matchSearch = item.jenisSurat.contains(searchQuery, ignoreCase = true) ||
                 item.namaPemohon.contains(searchQuery, ignoreCase = true)
-        val matchFilter = when (selectedStatusFilter) {
+        val matchFilter = when (selectedFilter) {
             "Proses" -> item.status == StatusPengajuan.PROSES
             "Diterima" -> item.status == StatusPengajuan.DITERIMA
             "Ditolak" -> item.status == StatusPengajuan.DITOLAK
@@ -57,8 +56,8 @@ fun StatusScreen(
         }
         matchSearch && matchFilter
     }.let { list ->
-        // Pengurutan berdasarkan waktu (ID menggunakan System.currentTimeMillis())
-        when (selectedSortOrder) {
+        // Pengurutan berdasarkan waktu menggunakan parameter `selectedSort` dari MainActivity
+        when (selectedSort) {
             "Terlama" -> list.sortedBy { it.id.toLongOrNull() ?: 0L }
             else -> list.sortedByDescending { it.id.toLongOrNull() ?: 0L } // Default "Terbaru" ditaruh paling atas
         }
@@ -189,13 +188,13 @@ fun StatusScreen(
                 ) {
                     FilterChipItem(
                         text = "Terbaru",
-                        isSelected = selectedSortOrder == "Terbaru",
-                        onClick = { selectedSortOrder = "Terbaru" }
+                        isSelected = selectedSort == "Terbaru",
+                        onClick = { onSortSelected("Terbaru") }
                     )
                     FilterChipItem(
                         text = "Terlama",
-                        isSelected = selectedSortOrder == "Terlama",
-                        onClick = { selectedSortOrder = "Terlama" }
+                        isSelected = selectedSort == "Terlama",
+                        onClick = { onSortSelected("Terlama") }
                     )
                 }
 
@@ -216,23 +215,23 @@ fun StatusScreen(
                 ) {
                     FilterChipItem(
                         text = "Semua ($totalCount)",
-                        isSelected = selectedStatusFilter == "Semua",
-                        onClick = { selectedStatusFilter = "Semua" }
+                        isSelected = selectedFilter == "Semua",
+                        onClick = { onFilterSelected("Semua") }
                     )
                     FilterChipItem(
                         text = "Proses ($prosesCount)",
-                        isSelected = selectedStatusFilter == "Proses",
-                        onClick = { selectedStatusFilter = "Proses" }
+                        isSelected = selectedFilter == "Proses",
+                        onClick = { onFilterSelected("Proses") }
                     )
                     FilterChipItem(
                         text = "Diterima ($diterimaCount)",
-                        isSelected = selectedStatusFilter == "Diterima",
-                        onClick = { selectedStatusFilter = "Diterima" }
+                        isSelected = selectedFilter == "Diterima",
+                        onClick = { onFilterSelected("Diterima") }
                     )
                     FilterChipItem(
                         text = "Ditolak ($ditolakCount)",
-                        isSelected = selectedStatusFilter == "Ditolak",
-                        onClick = { selectedStatusFilter = "Ditolak" }
+                        isSelected = selectedFilter == "Ditolak",
+                        onClick = { onFilterSelected("Ditolak") }
                     )
                 }
 

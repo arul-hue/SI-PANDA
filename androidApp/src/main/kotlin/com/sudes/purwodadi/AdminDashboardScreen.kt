@@ -22,16 +22,16 @@ import com.sudes.purwodadi.ui.theme.*
 
 @Composable
 fun AdminDashboardScreen(
-    listPengajuan: List<PengajuanItem> = emptyList(), // 👈 Menerima data real-time dari MainActivity
-    onDetailClicked: (PengajuanItem) -> Unit = {},    // 👈 Mengirimkan objek pengajuan lengkap
-    onSelesaikanClicked: (PengajuanItem) -> Unit = {},// 👈 Mengirimkan objek pengajuan lengkap
+    listPengajuan: List<PengajuanItem> = emptyList(), // Menerima data real-time dari MainActivity
+    selectedFilter: String = "Semua",                 // 👈 Menerima state filter dari MainActivity
+    onFilterSelected: (String) -> Unit = {},          // 👈 Callback saat filter diubah
+    selectedSort: String = "Terbaru",                 // 👈 Menerima state urutan waktu dari MainActivity
+    onSortSelected: (String) -> Unit = {},            // 👈 Callback saat urutan waktu diubah
+    onDetailClicked: (PengajuanItem) -> Unit = {},    // Mengirimkan objek pengajuan lengkap
+    onSelesaikanClicked: (PengajuanItem) -> Unit = {},// Mengirimkan objek pengajuan lengkap
     onLogoutClicked: () -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedStatusFilter by remember { mutableStateOf("Semua") }
-
-    // 👈 Diatur default-nya menjadi "Terlama" agar data terlama tampil paling atas secara default
-    var selectedSortOrder by remember { mutableStateOf("Terlama") }
 
     // State untuk mengontrol pop-up konfirmasi logout
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -55,11 +55,11 @@ fun AdminDashboardScreen(
     val sortScrollState = rememberScrollState()
     val filterScrollState = rememberScrollState()
 
-    // Logika Filter Status, Pencarian, & Pengurutan Waktu Admin berdasarkan data real-time
+    // Logika Filter Status, Pencarian, & Pengurutan Waktu Admin berdasarkan parameter dari MainActivity
     val filteredList = listPengajuan.filter { item ->
         val matchSearch = item.jenisSurat.contains(searchQuery, ignoreCase = true) ||
                 item.namaPemohon.contains(searchQuery, ignoreCase = true)
-        val matchFilter = when (selectedStatusFilter) {
+        val matchFilter = when (selectedFilter) {
             "Proses" -> item.status == StatusPengajuan.PROSES
             "Diterima" -> item.status == StatusPengajuan.DITERIMA
             "Ditolak" -> item.status == StatusPengajuan.DITOLAK
@@ -67,10 +67,10 @@ fun AdminDashboardScreen(
         }
         matchSearch && matchFilter
     }.let { list ->
-        // Pengurutan berdasarkan waktu (ID menggunakan System.currentTimeMillis())
-        when (selectedSortOrder) {
-            "Terbaru" -> list.sortedByDescending { it.id.toLongOrNull() ?: 0L }
-            else -> list.sortedBy { it.id.toLongOrNull() ?: 0L } // Default "Terlama" ditaruh paling atas
+        // Pengurutan berdasarkan waktu menggunakan parameter `selectedSort`
+        when (selectedSort) {
+            "Terlama" -> list.sortedBy { it.id.toLongOrNull() ?: 0L }
+            else -> list.sortedByDescending { it.id.toLongOrNull() ?: 0L } // Default "Terbaru" ditaruh paling atas
         }
     }
 
@@ -174,13 +174,13 @@ fun AdminDashboardScreen(
                 ) {
                     AdminFilterChipItem(
                         text = "Terbaru",
-                        isSelected = selectedSortOrder == "Terbaru",
-                        onClick = { selectedSortOrder = "Terbaru" }
+                        isSelected = selectedSort == "Terbaru",
+                        onClick = { onSortSelected("Terbaru") }
                     )
                     AdminFilterChipItem(
                         text = "Terlama",
-                        isSelected = selectedSortOrder == "Terlama",
-                        onClick = { selectedSortOrder = "Terlama" }
+                        isSelected = selectedSort == "Terlama",
+                        onClick = { onSortSelected("Terlama") }
                     )
                 }
 
@@ -201,23 +201,23 @@ fun AdminDashboardScreen(
                 ) {
                     AdminFilterChipItem(
                         text = "Semua (${listPengajuan.size})",
-                        isSelected = selectedStatusFilter == "Semua",
-                        onClick = { selectedStatusFilter = "Semua" }
+                        isSelected = selectedFilter == "Semua",
+                        onClick = { onFilterSelected("Semua") }
                     )
                     AdminFilterChipItem(
                         text = "Proses (${listPengajuan.count { it.status == StatusPengajuan.PROSES }})",
-                        isSelected = selectedStatusFilter == "Proses",
-                        onClick = { selectedStatusFilter = "Proses" }
+                        isSelected = selectedFilter == "Proses",
+                        onClick = { onFilterSelected("Proses") }
                     )
                     AdminFilterChipItem(
                         text = "Diterima (${listPengajuan.count { it.status == StatusPengajuan.DITERIMA }})",
-                        isSelected = selectedStatusFilter == "Diterima",
-                        onClick = { selectedStatusFilter = "Diterima" }
+                        isSelected = selectedFilter == "Diterima",
+                        onClick = { onFilterSelected("Diterima") }
                     )
                     AdminFilterChipItem(
                         text = "Ditolak (${listPengajuan.count { it.status == StatusPengajuan.DITOLAK }})",
-                        isSelected = selectedStatusFilter == "Ditolak",
-                        onClick = { selectedStatusFilter = "Ditolak" }
+                        isSelected = selectedFilter == "Ditolak",
+                        onClick = { onFilterSelected("Ditolak") }
                     )
                 }
 

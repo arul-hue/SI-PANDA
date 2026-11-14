@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,7 +15,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -48,6 +46,15 @@ fun AdminDetailPengajuanScreen(
             sdf.format(Date(millis))
         } else {
             pengajuanItem.tanggal // Fallback jika ID bukan millis
+        }
+    }
+
+    // Helper untuk memastikan tanggalKeputusan memiliki format yang konsisten berakhiran WIB
+    val formatWaktuKeputusan = remember(pengajuanItem.tanggalKeputusan) {
+        if (pengajuanItem.tanggalKeputusan.isNotBlank()) {
+            pengajuanItem.tanggalKeputusan
+        } else {
+            pengajuanItem.tanggal // Fallback jika tanggalKeputusan kosong
         }
     }
 
@@ -138,7 +145,7 @@ fun AdminDetailPengajuanScreen(
                         StatusPengajuan.PROSES -> {
                             TimelineStepItem(
                                 title = "1. Diproses — Berkas dicek perangkat desa",
-                                date = formatWaktuPengajuan, // 👈 Jam saat user mengajukan surat
+                                date = formatWaktuPengajuan, // Waktu warga mengajukan awal
                                 isCompleted = true,
                                 isProcess = true,
                                 showLine = true
@@ -154,14 +161,14 @@ fun AdminDetailPengajuanScreen(
                         StatusPengajuan.DITERIMA -> {
                             TimelineStepItem(
                                 title = "1. Diproses — Berkas telah diverifikasi",
-                                date = formatWaktuPengajuan, // 👈 Jam awal user mengajukan surat
+                                date = formatWaktuPengajuan, // Waktu warga mengajukan awal
                                 isCompleted = true,
                                 isProcess = false,
                                 showLine = true
                             )
                             TimelineStepItem(
                                 title = "2. Selesai — Surat dapat diambil di Balai Desa",
-                                date = pengajuanItem.tanggal, // 👈 Tanggal/jam saat admin memproses/menerima
+                                date = formatWaktuKeputusan, // 👈 Waktu presisi saat admin menerima/menyetujui
                                 isCompleted = true,
                                 isProcess = false,
                                 showLine = false
@@ -170,14 +177,14 @@ fun AdminDetailPengajuanScreen(
                         StatusPengajuan.DITOLAK -> {
                             TimelineStepItem(
                                 title = "1. Diproses — Berkas diterima perangkat desa",
-                                date = formatWaktuPengajuan, // 👈 Jam awal user mengajukan surat
+                                date = formatWaktuPengajuan, // Waktu warga mengajukan awal
                                 isCompleted = true,
                                 isProcess = false,
                                 showLine = true
                             )
                             TimelineStepItem(
                                 title = "2. Ditolak — Pengajuan perlu diperbaiki",
-                                date = pengajuanItem.tanggal, // 👈 Tanggal/jam saat admin menolak
+                                date = formatWaktuKeputusan, // 👈 Waktu presisi saat admin menolak
                                 isCompleted = true,
                                 isProcess = false,
                                 isRejected = true,

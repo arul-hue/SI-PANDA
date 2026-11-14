@@ -1,5 +1,6 @@
 package com.sudes.purwodadi
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -68,6 +69,17 @@ class MainActivity : ComponentActivity() {
                 var roleUser by remember { mutableStateOf("warga") }
 
                 var showIncompleteProfileDialog by remember { mutableStateOf(false) }
+
+                // State untuk melacak asal layar sebelum masuk ke surat usaha (Status / Detail)
+                var previousScreenBeforeSurat by remember { mutableStateOf("status") }
+
+                // State untuk mempertahankan pilihan filter dan urutan waktu di StatusScreen (Warga)
+                var selectedStatusFilter by remember { mutableStateOf("Semua") }
+                var selectedSortOrder by remember { mutableStateOf("Terbaru") }
+
+                // 👈 State untuk mempertahankan pilihan filter dan urutan waktu di AdminDashboardScreen (Admin)
+                var selectedAdminStatusFilter by remember { mutableStateOf("Semua") }
+                var selectedAdminSortOrder by remember { mutableStateOf("Terbaru") }
 
                 // SINKRONISASI REAL-TIME AMAN & SESUAI MODEL PENGAJUAN
                 val listPengajuan = remember { mutableStateListOf<PengajuanItem>() }
@@ -309,13 +321,19 @@ class MainActivity : ComponentActivity() {
                         "admin_dashboard" -> {
                             AdminDashboardScreen(
                                 listPengajuan = listPengajuan,
+                                selectedFilter = selectedAdminStatusFilter,        // 👈 Meneruskan filter status admin
+                                onFilterSelected = { newFilter ->
+                                    selectedAdminStatusFilter = newFilter           // 👈 Menyimpan filter status admin
+                                },
+                                selectedSort = selectedAdminSortOrder,             // 👈 Meneruskan urutan waktu admin
+                                onSortSelected = { newSort ->
+                                    selectedAdminSortOrder = newSort                // 👈 Menyimpan urutan waktu admin
+                                },
                                 onDetailClicked = { pengajuanItem ->
-                                    // 👈 Mengarahkan admin ke layar detail khusus admin
                                     selectedPengajuanItem = pengajuanItem
                                     currentScreen = "admin_detail_pengajuan"
                                 },
                                 onSelesaikanClicked = { pengajuanItem ->
-                                    // Mengarahkan ke form edit/keputusan admin
                                     selectedPengajuanItem = pengajuanItem
                                     selectedJenisSurat = pengajuanItem.jenisSurat
                                     currentScreen = "admin_edit_pengajuan"
@@ -329,7 +347,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         "admin_detail_pengajuan" -> {
-                            // 👈 Layar Detail Pengajuan sisi Admin
                             if (selectedPengajuanItem != null) {
                                 AdminDetailPengajuanScreen(
                                     pengajuanItem = selectedPengajuanItem!!,
@@ -344,13 +361,19 @@ class MainActivity : ComponentActivity() {
                         }
                         "admin_edit_pengajuan" -> {
                             if (selectedPengajuanItem != null) {
+                                val oldId = selectedPengajuanItem!!.id // Simpan ID lama untuk dihapus
                                 AdminEditPengajuanScreen(
                                     pengajuan = selectedPengajuanItem!!,
                                     onBackClicked = { currentScreen = "admin_dashboard" },
                                     onSaveSuccess = { updatedItem ->
+                                        // Simpan item baru dengan ID yang sudah diperbarui
                                         firestore.collection("pengajuan").document(updatedItem.id)
                                             .set(updatedItem)
                                             .addOnSuccessListener {
+                                                // Hapus dokumen lama jika ID-nya berubah agar data lama tidak menumpuk
+                                                if (oldId != updatedItem.id) {
+                                                    firestore.collection("pengajuan").document(oldId).delete()
+                                                }
                                                 Toast.makeText(context, "Keputusan berhasil disimpan!", Toast.LENGTH_SHORT).show()
                                                 currentScreen = "admin_dashboard"
                                             }
@@ -390,6 +413,14 @@ class MainActivity : ComponentActivity() {
                         "status" -> {
                             StatusScreen(
                                 listPengajuan = listPengajuan,
+                                selectedFilter = selectedStatusFilter,
+                                onFilterSelected = { newFilter ->
+                                    selectedStatusFilter = newFilter
+                                },
+                                selectedSort = selectedSortOrder,
+                                onSortSelected = { newSort ->
+                                    selectedSortOrder = newSort
+                                },
                                 onTabSelected = { tabIndex ->
                                     val target = when (tabIndex) {
                                         0 -> "home"
@@ -429,6 +460,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onResubmitClicked = { pengajuanItem ->
                                     itemYangAkanDiedit = pengajuanItem
+                                    previousScreenBeforeSurat = "status"
                                     if (pengajuanItem.jenisSurat.contains("Usaha", ignoreCase = true)) {
                                         currentScreen = "surat_usaha"
                                     }
@@ -449,6 +481,7 @@ class MainActivity : ComponentActivity() {
                                     if (selectedPengajuanItem != null) {
                                         itemYangAkanDiedit = selectedPengajuanItem
                                     }
+                                    previousScreenBeforeSurat = "detail_pengajuan"
                                     if (selectedJenisSurat.contains("Usaha", ignoreCase = true)) {
                                         currentScreen = "surat_usaha"
                                     }
@@ -535,8 +568,7 @@ class MainActivity : ComponentActivity() {
                             initialAlamat = alamatUser,
                             existingItem = itemYangAkanDiedit,
                             onBackClicked = {
-                                itemYangAkanDiedit = null
-                                currentScreen = "home"
+                                currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
                                 firestore.collection("pengajuan").document(itemBaru.id)
@@ -546,6 +578,10 @@ class MainActivity : ComponentActivity() {
                                             firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
                                         }
                                         itemYangAkanDiedit = null
+
+                                        val prefs = context.getSharedPreferences("DraftSuratUsahaPrefs", Context.MODE_PRIVATE)
+                                        prefs.edit().clear().apply()
+
                                         currentScreen = "status"
                                         Toast.makeText(context, "Pengajuan berhasil dikirim!", Toast.LENGTH_SHORT).show()
                                     }
