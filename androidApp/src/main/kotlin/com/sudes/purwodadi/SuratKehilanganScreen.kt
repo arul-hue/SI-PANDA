@@ -156,12 +156,19 @@ fun SuratKehilanganScreen(
 
     var isAutoFilled by remember { mutableStateOf(false) }
 
-    // State Detail Kehilangan (Disimpan di lokasiUsaha / field kustom pada item)
-    // Untuk kehilangan, kita simpan ringkasan detail kejadian / barang hilang di lokasiUsaha atau penampung terkait
-    var hariKejadian by remember { mutableStateOf(savedHari) }
-    var tanggalKejadian by remember { mutableStateOf(savedTanggal) }
-    var jamPerkiraanHilang by remember { mutableStateOf(savedJam) }
-    var barangHilang by remember { mutableStateOf(existingItem?.namaUsaha ?: if (savedBarang.isNotBlank()) savedBarang else "") }
+    // State Detail Kehilangan (Prioritaskan existingItem saat resubmit, lalu draft lokal)
+    var hariKejadian by remember {
+        mutableStateOf(existingItem?.hariKejadian?.takeIf { it.isNotBlank() } ?: savedHari)
+    }
+    var tanggalKejadian by remember {
+        mutableStateOf(existingItem?.tanggalKejadian?.takeIf { it.isNotBlank() } ?: savedTanggal)
+    }
+    var jamPerkiraanHilang by remember {
+        mutableStateOf(existingItem?.jamKejadian?.takeIf { it.isNotBlank() } ?: savedJam)
+    }
+    var barangHilang by remember {
+        mutableStateOf(existingItem?.barangHilang?.takeIf { it.isNotBlank() } ?: savedBarang)
+    }
 
     // State Lampiran File Pengantar RT
     val initialUri = existingItem?.pengantarUri?.takeIf { it.isNotBlank() } ?: if (savedUriStr.isNotBlank()) savedUriStr else null
@@ -662,6 +669,7 @@ fun SuratKehilanganScreen(
                     Button(
                         onClick = {
                             showConfirmDialog = false
+                            clearDraftSuratKehilangan(context)
                             isSubmittedSuccess = true
                         },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
