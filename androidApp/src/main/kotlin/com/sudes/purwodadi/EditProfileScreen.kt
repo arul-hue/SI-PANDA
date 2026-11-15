@@ -66,8 +66,9 @@ fun EditProfileScreen(
 
     Scaffold(
         topBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
+            Surface(modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding(),
                 color = GreenDesaPrimary,
                 shadowElevation = 4.dp
             ) {

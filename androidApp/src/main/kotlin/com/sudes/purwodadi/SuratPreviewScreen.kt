@@ -41,7 +41,9 @@ fun SuratPreviewScreen(
     Scaffold(
         topBar = {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding(),
                 color = GreenDesaPrimary,
                 shadowElevation = 4.dp
             ) {

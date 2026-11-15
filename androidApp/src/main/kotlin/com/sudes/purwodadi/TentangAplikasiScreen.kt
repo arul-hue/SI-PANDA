@@ -40,6 +40,7 @@ fun TentangAplikasiScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .statusBarsPadding() // Mendorong isi header ke bawah area jam & baterai
                         .height(56.dp)
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
