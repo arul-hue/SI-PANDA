@@ -389,8 +389,8 @@ class MainActivity : ComponentActivity() {
 
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Pelapor"),
 
-                                                    DetailFieldItem("Nama Lengkap Pelapor", pengajuanItem.namaPemohon),
-                                                    DetailFieldItem("NIK Pelapor", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
@@ -412,15 +412,15 @@ class MainActivity : ComponentActivity() {
 
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Almarhum / Almarhumah"),
 
-                                                    DetailFieldItem("Nama Lengkap Almarhum/h", pengajuanItem.namaPemohon),
-                                                    DetailFieldItem("NIK Almarhum/h", pengajuanItem.nik.ifBlank { "-" }),
-                                                    DetailFieldItem("Umur Almarhum/h", pengajuanItem.umur.ifBlank { "-" }),
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Umur", pengajuanItem.umur.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
                                                     DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
-                                                    DetailFieldItem("Alamat Lengkap Almarhum", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
 
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Kematian"),
 
@@ -634,8 +634,8 @@ class MainActivity : ComponentActivity() {
 
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Pelapor"),
 
-                                                    DetailFieldItem("Nama Lengkap Pelapor", pengajuanItem.namaPemohon),
-                                                    DetailFieldItem("NIK Pelapor", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
@@ -657,15 +657,15 @@ class MainActivity : ComponentActivity() {
 
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Almarhum / Almarhumah"),
 
-                                                    DetailFieldItem("Nama Lengkap Almarhum/h", pengajuanItem.namaPemohon),
-                                                    DetailFieldItem("NIK Almarhum/h", pengajuanItem.nik.ifBlank { "-" }),
-                                                    DetailFieldItem("Umur Almarhum/h", pengajuanItem.umur.ifBlank { "-" }),
+                                                    DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
+                                                    DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
+                                                    DetailFieldItem("Umur", pengajuanItem.umur.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
                                                     DetailFieldItem("Jenis Kelamin", pengajuanItem.jenisKelamin.ifBlank { "-" }),
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
-                                                    DetailFieldItem("Alamat Lengkap Almarhum", pengajuanItem.alamatLengkap.ifBlank { "-" }),
+                                                    DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
 
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Kematian"),
 

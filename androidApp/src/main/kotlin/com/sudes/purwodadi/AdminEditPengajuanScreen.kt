@@ -25,6 +25,20 @@ import com.sudes.purwodadi.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.Calendar
+
+fun generateDefaultNomorSurat(jenisSurat: String): String {
+    // Mengambil tahun secara dinamis dari sistem (tahun 2026 atau berjalan)
+    val tahunDinamis = Calendar.getInstance().get(Calendar.YEAR).toString()
+
+    return when {
+        jenisSurat.contains("Usaha", ignoreCase = true) -> "140 / ___ / VII.02.13 / IX / $tahunDinamis"
+        jenisSurat.contains("Domisili", ignoreCase = true) -> "140 / ___ / VII.02.13 / IX / $tahunDinamis"
+        jenisSurat.contains("Kehilangan", ignoreCase = true) -> "140 / ___ / LK / II / VII.02.03 / $tahunDinamis"
+        jenisSurat.contains("Kematian", ignoreCase = true) -> "470 / ___ / IX / SKM / VII.02.03 / $tahunDinamis"
+        jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> "470 / ___ / VII.02.13 / IX / $tahunDinamis"
+    }
+}
 
 @Composable
 fun AdminEditPengajuanScreen(
@@ -44,9 +58,10 @@ fun AdminEditPengajuanScreen(
 
     // Cek Jenis Surat
     val isUsaha = pengajuan.jenisSurat.contains("Usaha", ignoreCase = true)
+    val isDomisili = pengajuan.jenisSurat.contains("Domisili", ignoreCase = true)
+    val isKehilangan = pengajuan.jenisSurat.contains("Kehilangan", ignoreCase = true)
     val isKematian = pengajuan.jenisSurat.contains("Kematian", ignoreCase = true)
     val isSktm = pengajuan.jenisSurat.contains("Tidak Mampu", ignoreCase = true)
-    val isDomisili = pengajuan.jenisSurat.contains("Domisili", ignoreCase = true)
 
     // State Khusus Kematian
     var umur by remember { mutableStateOf(pengajuan.umur) }
@@ -83,8 +98,15 @@ fun AdminEditPengajuanScreen(
     var fieldExtra2 by remember { mutableStateOf(initialField2) }
 
     // Nomor surat resmi
+    // Inisialisasi state nomor surat dengan nilai default dinamis jika kosong
     var nomorSurat by remember {
-        mutableStateOf(if (pengajuan.nomorSurat == "-") "" else pengajuan.nomorSurat)
+        mutableStateOf(
+            if (pengajuan.nomorSurat.isNullOrBlank()) {
+                generateDefaultNomorSurat(pengajuan.jenisSurat)
+            } else {
+                pengajuan.nomorSurat
+            }
+        )
     }
 
     // Pilihan Keputusan Kelurahan
@@ -150,13 +172,13 @@ fun AdminEditPengajuanScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Mode Koreksi & Edit Data Pemohon (${pengajuan.jenisSurat}):",
-                        style = AppTypography.Caption.copy(fontWeight = FontWeight.Bold),
+                        style = AppTypography.BodyRegular.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFF92400E)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Admin dapat langsung mengubah isian di bawah ini jika warga mengalami salah ketik (typo).",
-                        style = AppTypography.BodyRegular,
+                        style = AppTypography.Caption,
                         color = Color(0xFF78350F)
                     )
                 }
@@ -177,20 +199,29 @@ fun AdminEditPengajuanScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "FORMULIR EDIT DATA WARGA",
-                        style = AppTypography.HeadingMedium,
+                        text = "FORMULIR DATA WARGA",
+                        style = AppTypography.HeadingLarge,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    Text(
+                        text = if (isUsaha) "Data Diri Warga" else if (isDomisili) "Data Diri" else if (isKehilangan) "Data Diri Pelapor" else if (isKematian) "Data Diri Almarhum / Almarhumah" else "Data Diri",
+                        style = AppTypography.HeadingMedium,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     AdminEditTextField(
-                        label = if (isKematian) "Nama Almarhum / Almarhumah" else "Nama Lengkap",
+                        label = "Nama Lengkap",
                         value = nama,
                         onValueChange = { nama = it },
                         isError = showErrorValidation && nama.isBlank()
                     )
                     AdminEditTextField(
-                        label = if (isKematian) "NIK Almarhum" else "NIK",
+                        label = "NIK",
                         value = nik,
                         onValueChange = { nik = it },
                         isError = showErrorValidation && nik.isBlank()
@@ -198,7 +229,7 @@ fun AdminEditPengajuanScreen(
 
                     if (isKematian) {
                         AdminEditTextField(
-                            label = "Umur Almarhum",
+                            label = "Umur",
                             value = umur,
                             onValueChange = { umur = it },
                             isError = showErrorValidation && umur.isBlank()
@@ -211,12 +242,22 @@ fun AdminEditPengajuanScreen(
                         onValueChange = { ttl = it },
                         isError = showErrorValidation && ttl.isBlank()
                     )
-                    AdminEditTextField(
-                        label = "Jenis Kelamin",
-                        value = jenisKelamin,
-                        onValueChange = { jenisKelamin = it },
-                        isError = showErrorValidation && jenisKelamin.isBlank()
-                    )
+                    if (!isKehilangan) {
+                        AdminEditTextField(
+                            label = "Jenis Kelamin",
+                            value = jenisKelamin,
+                            onValueChange = { jenisKelamin = it },
+                            isError = showErrorValidation && jenisKelamin.isBlank()
+                        )
+                    }
+                    if (isKehilangan) {
+                        AdminEditTextField(
+                            label = "Pekerjaan",
+                            value = pekerjaan,
+                            onValueChange = { pekerjaan = it },
+                            isError = showErrorValidation && pekerjaan.isBlank()
+                        )
+                    }
                     AdminEditTextField(
                         label = "Agama",
                         value = agama,
@@ -231,15 +272,16 @@ fun AdminEditPengajuanScreen(
                             isError = showErrorValidation && statusPerkawinan.isBlank()
                         )
                     }
+                    if (!isKehilangan) {
+                        AdminEditTextField(
+                            label = "Pekerjaan",
+                            value = pekerjaan,
+                            onValueChange = { pekerjaan = it },
+                            isError = showErrorValidation && pekerjaan.isBlank()
+                        )
+                    }
                     AdminEditTextField(
-                        label = if (isKematian) "Pekerjaan Terakhir" else "Pekerjaan",
-                        value = pekerjaan,
-                        onValueChange = { pekerjaan = it },
-                        isError = showErrorValidation && pekerjaan.isBlank()
-                    )
-
-                    AdminEditTextField(
-                        label = if (isKematian) "Alamat Almarhum" else "Alamat Lengkap",
+                        label = "Alamat Lengkap",
                         value = alamatLengkap,
                         onValueChange = { alamatLengkap = it },
                         singleLine = false,
@@ -248,103 +290,150 @@ fun AdminEditPengajuanScreen(
                         isError = showErrorValidation && alamatLengkap.isBlank()
                     )
 
-                    // RENDER FIELD TAMBAHAN KHUSUS KEMATIAN SECARA TERPISAH (DIKEOMPOKKAN)
-                    if (isKematian) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Rincian Kematian (Waktu & Tempat)", style = AppTypography.HeadingMedium, color = TextPrimary)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        AdminEditTextField(label = "Pukul / Jam Wafat", value = pukulWafat, onValueChange = { pukulWafat = it }, isError = showErrorValidation && pukulWafat.isBlank())
-                        AdminEditTextField(label = "Hari Wafat", value = hariWafat, onValueChange = { hariWafat = it }, isError = showErrorValidation && hariWafat.isBlank())
-                        AdminEditTextField(label = "Tanggal Wafat", value = tanggalWafat, onValueChange = { tanggalWafat = it }, isError = showErrorValidation && tanggalWafat.isBlank())
-                        AdminEditTextField(label = "Tempat Wafat", value = tempatWafat, onValueChange = { tempatWafat = it }, isError = showErrorValidation && tempatWafat.isBlank())
+                    when {
+                        isUsaha -> {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Detail Usaha", style = AppTypography.HeadingMedium, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AdminEditTextField(
+                                label = "Nama / Deskripsi Usaha",
+                                value = fieldExtra1,
+                                onValueChange = { fieldExtra1 = it },
+                                isError = showErrorValidation && fieldExtra1.isBlank()
+                            )
+                            AdminEditTextField(
+                                label = "Lokasi Usaha",
+                                value = fieldExtra2,
+                                onValueChange = { fieldExtra2 = it },
+                                singleLine = false,
+                                minLines = 2,
+                                maxLines = 3,
+                                isError = showErrorValidation && fieldExtra2.isBlank()
+                            )
+                        }
+                        isDomisili -> {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Detail Domisili", style = AppTypography.HeadingMedium, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AdminEditTextField(
+                                label = "Alamat Tempat Tinggal Saat Ini",
+                                value = fieldExtra2,
+                                onValueChange = { fieldExtra2 = it },
+                                singleLine = false,
+                                minLines = 2,
+                                maxLines = 3,
+                                isError = showErrorValidation && fieldExtra2.isBlank()
+                            )
+                        }
+                        isKehilangan -> {
+                            var hariKejadian by remember { mutableStateOf("") }
+                            var tanggalKejadian by remember { mutableStateOf("") }
+                            var jamKejadian by remember { mutableStateOf("") }
+                            var barangHilang by remember { mutableStateOf(fieldExtra1) }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Rincian Pemakaman", style = AppTypography.HeadingMedium, color = TextPrimary)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        AdminEditTextField(label = "Pukul Pemakaman", value = pukulPemakaman, onValueChange = { pukulPemakaman = it }, isError = showErrorValidation && pukulPemakaman.isBlank())
-                        AdminEditTextField(label = "Hari Pemakaman", value = hariPemakaman, onValueChange = { hariPemakaman = it }, isError = showErrorValidation && hariPemakaman.isBlank())
-                        AdminEditTextField(label = "Tanggal Pemakaman", value = tanggalPemakaman, onValueChange = { tanggalPemakaman = it }, isError = showErrorValidation && tanggalPemakaman.isBlank())
-                        AdminEditTextField(label = "Tempat Pemakaman (TPU)", value = tempatPemakaman, onValueChange = { tempatPemakaman = it }, isError = showErrorValidation && tempatPemakaman.isBlank())
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Detail Kehilangan", style = AppTypography.HeadingMedium, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AdminEditTextField(
+                                label = "Hari Kejadian",
+                                value = hariKejadian,
+                                onValueChange = { hariKejadian = it },
+                                placeholder = "Contoh: Senin",
+                                isError = showErrorValidation && hariKejadian.isBlank()
+                            )
+                            AdminEditTextField(
+                                label = "Tanggal Kejadian",
+                                value = tanggalKejadian,
+                                onValueChange = { tanggalKejadian = it },
+                                placeholder = "Contoh: 12 Oktober 2026",
+                                isError = showErrorValidation && tanggalKejadian.isBlank()
+                            )
+                            AdminEditTextField(
+                                label = "Jam / Waktu Kejadian",
+                                value = jamKejadian,
+                                onValueChange = { jamKejadian = it },
+                                placeholder = "Contoh: 14.30 WIB",
+                                isError = showErrorValidation && jamKejadian.isBlank()
+                            )
+                            AdminEditTextField(
+                                label = "Barang / Surat yang Hilang",
+                                value = barangHilang,
+                                onValueChange = {
+                                    barangHilang = it
+                                    fieldExtra1 = it
+                                },
+                                placeholder = "Contoh: KTP / Dompet / Sertifikat",
+                                singleLine = false,
+                                minLines = 2,
+                                maxLines = 3,
+                                isError = showErrorValidation && barangHilang.isBlank()
+                            )
+                        }
+                        isKematian -> {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Detail Kematian", style = AppTypography.HeadingMedium, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AdminEditTextField(label = "Jam Wafat", value = pukulWafat, onValueChange = { pukulWafat = it }, isError = showErrorValidation && pukulWafat.isBlank())
+                            AdminEditTextField(label = "Hari Wafat", value = hariWafat, onValueChange = { hariWafat = it }, isError = showErrorValidation && hariWafat.isBlank())
+                            AdminEditTextField(label = "Tanggal Wafat", value = tanggalWafat, onValueChange = { tanggalWafat = it }, isError = showErrorValidation && tanggalWafat.isBlank())
+                            AdminEditTextField(label = "Tempat Wafat", value = tempatWafat, onValueChange = { tempatWafat = it }, isError = showErrorValidation && tempatWafat.isBlank())
 
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Data Pelapor", style = AppTypography.HeadingMedium, color = TextPrimary)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        AdminEditTextField(label = "Nama Pelapor", value = namaPelapor, onValueChange = { namaPelapor = it }, isError = showErrorValidation && namaPelapor.isBlank())
-                        AdminEditTextField(label = "NIK Pelapor", value = nikPelapor, onValueChange = { nikPelapor = it }, isError = showErrorValidation && nikPelapor.isBlank())
-                        AdminEditTextField(label = "Alamat Pelapor", value = alamatPelapor, onValueChange = { alamatPelapor = it }, singleLine = false, minLines = 2, maxLines = 3, isError = showErrorValidation && alamatPelapor.isBlank())
-                        AdminEditTextField(label = "Status / Hubungan dengan Almarhum", value = hubunganPelapor, onValueChange = { hubunganPelapor = it }, isError = showErrorValidation && hubunganPelapor.isBlank())
-                    } else {
-                        // RENDER FIELD TAMBAHAN SURAT LAINNYA
-                        when {
-                            pengajuan.jenisSurat.contains("Usaha", ignoreCase = true) -> {
-                                AdminEditTextField(
-                                    label = "Nama / Deskripsi Usaha",
-                                    value = fieldExtra1,
-                                    onValueChange = { fieldExtra1 = it },
-                                    isError = showErrorValidation && fieldExtra1.isBlank()
-                                )
-                                AdminEditTextField(
-                                    label = "Lokasi Usaha",
-                                    value = fieldExtra2,
-                                    onValueChange = { fieldExtra2 = it },
-                                    singleLine = false,
-                                    minLines = 2,
-                                    maxLines = 3,
-                                    isError = showErrorValidation && fieldExtra2.isBlank()
-                                )
-                            }
-                            pengajuan.jenisSurat.contains("Domisili", ignoreCase = true) -> {
-                                AdminEditTextField(
-                                    label = "Alamat Tempat Tinggal Saat Ini",
-                                    value = fieldExtra2,
-                                    onValueChange = { fieldExtra2 = it },
-                                    singleLine = false,
-                                    minLines = 2,
-                                    maxLines = 3,
-                                    isError = showErrorValidation && fieldExtra2.isBlank()
-                                )
-                            }
-                            pengajuan.jenisSurat.contains("Kehilangan", ignoreCase = true) -> {
-                                AdminEditTextField(
-                                    label = "Barang / Surat yang Hilang",
-                                    value = fieldExtra1,
-                                    onValueChange = { fieldExtra1 = it },
-                                    isError = showErrorValidation && fieldExtra1.isBlank()
-                                )
-                                AdminEditTextField(
-                                    label = "Detail Waktu & Kejadian",
-                                    value = fieldExtra2,
-                                    onValueChange = { fieldExtra2 = it },
-                                    singleLine = false,
-                                    minLines = 2,
-                                    maxLines = 3,
-                                    isError = showErrorValidation && fieldExtra2.isBlank()
-                                )
-                            }
-                            pengajuan.jenisSurat.contains("Tidak Mampu", ignoreCase = true) -> {
-                                AdminEditTextField(
-                                    label = "Nomor Kartu Keluarga (KK)",
-                                    value = fieldExtra1,
-                                    onValueChange = { fieldExtra1 = it },
-                                    placeholder = "Masukkan nomor KK",
-                                    isError = showErrorValidation && fieldExtra1.isBlank()
-                                )
-                                AdminEditTextField(
-                                    label = "Nama Kepala Keluarga (di KK)",
-                                    value = pengajuan.namaUsaha,
-                                    onValueChange = { },
-                                    isError = false
-                                )
-                                AdminEditTextField(
-                                    label = "Keperluan Pembuatan Surat",
-                                    value = fieldExtra2,
-                                    onValueChange = { fieldExtra2 = it },
-                                    singleLine = false,
-                                    minLines = 2,
-                                    maxLines = 3,
-                                    isError = showErrorValidation && fieldExtra2.isBlank()
-                                )
-                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Detail Pemakaman", style = AppTypography.HeadingMedium, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AdminEditTextField(label = "Jam Pemakaman", value = pukulPemakaman, onValueChange = { pukulPemakaman = it }, isError = showErrorValidation && pukulPemakaman.isBlank())
+                            AdminEditTextField(label = "Hari Pemakaman", value = hariPemakaman, onValueChange = { hariPemakaman = it }, isError = showErrorValidation && hariPemakaman.isBlank())
+                            AdminEditTextField(label = "Tanggal Pemakaman", value = tanggalPemakaman, onValueChange = { tanggalPemakaman = it }, isError = showErrorValidation && tanggalPemakaman.isBlank())
+                            AdminEditTextField(label = "Tempat Pemakaman (TPU)", value = tempatPemakaman, onValueChange = { tempatPemakaman = it }, isError = showErrorValidation && tempatPemakaman.isBlank())
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Data Pelapor", style = AppTypography.HeadingMedium, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AdminEditTextField(label = "Nama Pelapor", value = namaPelapor, onValueChange = { namaPelapor = it }, isError = showErrorValidation && namaPelapor.isBlank())
+                            AdminEditTextField(label = "NIK Pelapor", value = nikPelapor, onValueChange = { nikPelapor = it }, isError = showErrorValidation && nikPelapor.isBlank())
+                            AdminEditTextField(label = "Alamat Pelapor", value = alamatPelapor, onValueChange = { alamatPelapor = it }, singleLine = false, minLines = 2, maxLines = 3, isError = showErrorValidation && alamatPelapor.isBlank())
+                            AdminEditTextField(label = "Status / Hubungan dengan Almarhum", value = hubunganPelapor, onValueChange = { hubunganPelapor = it }, isError = showErrorValidation && hubunganPelapor.isBlank())
+                        }
+                        isSktm -> {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Detail Keluarga & Keperluan", style = AppTypography.HeadingMedium, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = BorderColor, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AdminEditTextField(
+                                label = "Nomor Kartu Keluarga (KK)",
+                                value = fieldExtra1,
+                                onValueChange = { fieldExtra1 = it },
+                                placeholder = "Masukkan nomor KK",
+                                isError = showErrorValidation && fieldExtra1.isBlank()
+                            )
+                            AdminEditTextField(
+                                label = "Nama Kepala Keluarga (di KK)",
+                                value = pengajuan.namaUsaha,
+                                onValueChange = { },
+                                isError = false
+                            )
+                            AdminEditTextField(
+                                label = "Keperluan Pembuatan Surat",
+                                value = fieldExtra2,
+                                onValueChange = { fieldExtra2 = it },
+                                singleLine = false,
+                                minLines = 2,
+                                maxLines = 3,
+                                isError = showErrorValidation && fieldExtra2.isBlank()
+                            )
                         }
                     }
 
