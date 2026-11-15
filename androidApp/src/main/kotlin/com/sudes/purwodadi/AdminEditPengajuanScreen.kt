@@ -1,6 +1,8 @@
 package com.sudes.purwodadi
 
 import android.net.Uri
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -11,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,13 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.DialogProperties
 import com.sudes.purwodadi.ui.theme.*
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import java.util.Calendar
 
 fun generateDefaultNomorSurat(jenisSurat: String): String {
     val tahunDinamis = Calendar.getInstance().get(Calendar.YEAR).toString()
@@ -45,6 +53,9 @@ fun AdminEditPengajuanScreen(
     onBackClicked: () -> Unit = {},
     onSaveSuccess: (updatedItem: PengajuanItem) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     // Inisialisasi state form data diri universal
     var nama by remember { mutableStateOf(pengajuan.namaPemohon) }
     var nik by remember { mutableStateOf(pengajuan.nik) }
@@ -80,9 +91,16 @@ fun AdminEditPengajuanScreen(
     var hubunganPelapor by remember { mutableStateOf(pengajuan.namaUsaha) }
 
     // State Khusus Kehilangan
-    var hariKejadian by remember { mutableStateOf("") }
-    var tanggalKejadian by remember { mutableStateOf("") }
-    var jamKejadian by remember { mutableStateOf("") }
+    val savedPartsKehilangan = if (isKehilangan) pengajuan.lokasiUsaha.split(" | ") else listOf()
+    var hariKejadian by remember {
+        mutableStateOf(savedPartsKehilangan.find { it.startsWith("Hari:") }?.removePrefix("Hari: ") ?: "")
+    }
+    var tanggalKejadian by remember {
+        mutableStateOf(savedPartsKehilangan.find { it.startsWith("Tanggal:") }?.removePrefix("Tanggal: ") ?: "")
+    }
+    var jamKejadian by remember {
+        mutableStateOf(savedPartsKehilangan.find { it.startsWith("Jam:") }?.removePrefix("Jam: ") ?: "")
+    }
 
     // Parsing data dinamis surat lain (Usaha, Domisili, Kehilangan, SKTM)
     val savedLokasi = pengajuan.lokasiUsaha
@@ -90,6 +108,7 @@ fun AdminEditPengajuanScreen(
 
     val initialField1 = when {
         isSktm -> if (splitLokasi.isNotEmpty() && splitLokasi[0].startsWith("No. KK: ")) splitLokasi[0].removePrefix("No. KK: ") else ""
+        isKehilangan -> savedPartsKehilangan.find { it.startsWith("Barang:") }?.removePrefix("Barang: ") ?: pengajuan.namaUsaha
         else -> pengajuan.namaUsaha
     }
 
@@ -101,23 +120,82 @@ fun AdminEditPengajuanScreen(
     var fieldExtra1 by remember { mutableStateOf(initialField1) }
     var fieldExtra2 by remember { mutableStateOf(initialField2) }
 
-    // Inisialisasi state nomor surat dengan nilai default dinamis
+    // Inisialisasi state nomor surat dengan nilai default dinamis atau yang sudah tersimpan
     var nomorSurat by remember {
-        mutableStateOf(generateDefaultNomorSurat(pengajuan.jenisSurat))
+        mutableStateOf(
+            if (pengajuan.nomorSurat.isNotBlank() && pengajuan.nomorSurat != "-")
+                pengajuan.nomorSurat
+            else
+                generateDefaultNomorSurat(pengajuan.jenisSurat)
+        )
     }
 
     // Pilihan Keputusan Kelurahan
-    var isDiterima by remember { mutableStateOf(true) }
-    var alasanDitolak by remember { mutableStateOf("") }
+    var isDiterima by remember { mutableStateOf(pengajuan.status != StatusPengajuan.DITOLAK) }
+    var alasanDitolak by remember { mutableStateOf(if (pengajuan.status == StatusPengajuan.DITOLAK) pengajuan.pesanStatus else "") }
 
-    // State Validasi & Dialog
+    // State Validasi, Dialog & Status Pengiriman Email
     var showErrorValidation by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showImagePreviewDialog by remember { mutableStateOf(false) }
+    var showPdfHtmlPreviewDialog by remember { mutableStateOf(false) }
+    var isSendingEmail by remember { mutableStateOf(false) }
+    var sudahTerbitItem by remember {
+        mutableStateOf(if (pengajuan.status == StatusPengajuan.DITERIMA) pengajuan else null)
+    }
 
     val scrollState = rememberScrollState()
 
-    BackHandler {
+    fun buildCurrentUpdatedItem(keepExistingId: Boolean = false): PengajuanItem {
+        val targetId = if (keepExistingId) pengajuan.id else System.currentTimeMillis().toString()
+        val waktuKeputusan = getCurrentDateTime()
+
+        val finalNamaUsaha = when {
+            isKematian -> hubunganPelapor
+            isSktm -> pengajuan.namaUsaha
+            else -> fieldExtra1
+        }
+
+        val finalLokasiUsaha = when {
+            isKematian -> pengajuan.lokasiUsaha
+            isSktm -> "No. KK: $fieldExtra1 | Keperluan: $fieldExtra2"
+            isKehilangan -> "Hari: $hariKejadian | Tanggal: $tanggalKejadian | Jam: $jamKejadian | Barang: $fieldExtra1"
+            else -> fieldExtra2
+        }
+
+        return pengajuan.copy(
+            id = targetId,
+            namaPemohon = nama,
+            nik = nik,
+            tempatTanggalLahir = ttl,
+            jenisKelamin = jenisKelamin,
+            agama = agama,
+            statusPerkawinan = statusPerkawinan,
+            pekerjaan = pekerjaan,
+            alamatLengkap = alamatLengkap,
+            umur = if (isKematian) umur else pengajuan.umur,
+            pukulWafat = if (isKematian) pukulWafat else pengajuan.pukulWafat,
+            hariWafat = if (isKematian) hariWafat else pengajuan.hariWafat,
+            tanggalWafat = if (isKematian) tanggalWafat else pengajuan.tanggalWafat,
+            tempatWafat = if (isKematian) tempatWafat else pengajuan.tempatWafat,
+            pukulPemakaman = if (isKematian) pukulPemakaman else pengajuan.pukulPemakaman,
+            hariPemakaman = if (isKematian) hariPemakaman else pengajuan.hariPemakaman,
+            tanggalPemakaman = if (isKematian) tanggalPemakaman else pengajuan.tanggalPemakaman,
+            tempatPemakaman = if (isKematian) tempatPemakaman else pengajuan.tempatPemakaman,
+            namaPelapor = if (isKematian) namaPelapor else pengajuan.namaPelapor,
+            nikPelapor = if (isKematian) nikPelapor else pengajuan.nikPelapor,
+            alamatPelapor = if (isKematian) alamatPelapor else pengajuan.alamatPelapor,
+            namaUsaha = finalNamaUsaha,
+            lokasiUsaha = finalLokasiUsaha,
+            nomorSurat = nomorSurat.ifBlank { "-" },
+            status = if (isDiterima) StatusPengajuan.DITERIMA else StatusPengajuan.DITOLAK,
+            pesanStatus = if (isDiterima) "Surat telah diterbitkan oleh perangkat desa. Silakan ambil di balai desa." else alasanDitolak,
+            tanggalKeputusan = waktuKeputusan,
+            pengantarUri = pengajuan.pengantarUri
+        )
+    }
+
+    BackHandler(enabled = !isSendingEmail) {
         onBackClicked()
     }
 
@@ -135,7 +213,10 @@ fun AdminEditPengajuanScreen(
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onBackClicked) {
+                    IconButton(
+                        onClick = onBackClicked,
+                        enabled = !isSendingEmail
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -159,6 +240,81 @@ fun AdminEditPengajuanScreen(
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
+            // TOMBOL KIRIM ULANG OTOMATIS VIA EMAILJS (MUNCUL JIKA SURAT SUDAH TERBIT)
+            sudahTerbitItem?.let { itemTerbit ->
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFECFDF5),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, GreenDesaPrimary)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "STATUS: SURAT TERBIT",
+                                style = AppTypography.Caption.copy(fontWeight = FontWeight.Bold),
+                                color = GreenDesaPrimary
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFD1FAE5)
+                            ) {
+                                Text(
+                                    text = "Siap Kirim Ulang",
+                                    style = AppTypography.Caption.copy(fontWeight = FontWeight.Bold),
+                                    color = GreenDesaPrimary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Data surat resmi sudah tersimpan di database. Jika pengiriman email otomatis sebelumnya gagal karena gangguan jaringan, klik tombol di bawah ini:",
+                            style = AppTypography.Caption,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                isSendingEmail = true
+                                coroutineScope.launch {
+                                    EmailSenderHelper.sendEmailAutomatic(
+                                        context = context,
+                                        pengajuan = itemTerbit,
+                                        onFinished = {
+                                            isSendingEmail = false
+                                        }
+                                    )
+                                }
+                            },
+                            enabled = !isSendingEmail,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isSendingEmail) "Mengirim Surat ke Email..." else "Kirim Ulang Surat ke Email Admin",
+                                style = AppTypography.ButtonText
+                            )
+                        }
+                    }
+                }
+            }
+
             // INFO BANNER KUNING
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -590,7 +746,6 @@ fun AdminEditPengajuanScreen(
                                 color = RedRejectedText
                             )
                             if (showErrorValidation && alasanDitolak.isBlank()) {
-                                // PERBAIKAN SYNTAX ERROR DI SINI
                                 Text(
                                     text = "Wajib diisi",
                                     style = AppTypography.Caption.copy(
@@ -632,7 +787,34 @@ fun AdminEditPengajuanScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // TOMBOL AKSI SIMPAN (VALIDASI DISESUAIKAN DENGAN FIELD YANG TAMPIL)
+            // TOMBOL PRATINJAU DOKUMEN SURAT FULL SCREEN ZOOMABLE
+            if (isDiterima) {
+                OutlinedButton(
+                    onClick = { showPdfHtmlPreviewDialog = true },
+                    enabled = !isSendingEmail,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, GreenDesaPrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = GreenDesaPrimary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Pratinjau Dokumen Surat (Zoom)",
+                        style = AppTypography.ButtonText.copy(color = GreenDesaPrimary)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // TOMBOL AKSI SIMPAN
             Button(
                 onClick = {
                     val isBaseValid = nama.isNotBlank() &&
@@ -671,6 +853,7 @@ fun AdminEditPengajuanScreen(
                         showErrorValidation = true
                     }
                 },
+                enabled = !isSendingEmail,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -678,7 +861,7 @@ fun AdminEditPengajuanScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
             ) {
                 Text(
-                    text = "Simpan Keputusan & Proses",
+                    text = if (isSendingEmail) "Mengirim Surat..." else "Simpan Keputusan & Proses",
                     style = AppTypography.ButtonText
                 )
             }
@@ -687,6 +870,7 @@ fun AdminEditPengajuanScreen(
 
             OutlinedButton(
                 onClick = onBackClicked,
+                enabled = !isSendingEmail,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -703,7 +887,7 @@ fun AdminEditPengajuanScreen(
         }
     }
 
-    // DIALOG PRATINJAU FOTO FULL SCREEN
+    // DIALOG PRATINJAU FOTO PENGANTAR RT FULL SCREEN
     if (showImagePreviewDialog && pengajuan.pengantarUri.isNotBlank()) {
         var scale by remember { mutableStateOf(1f) }
         var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
@@ -712,7 +896,7 @@ fun AdminEditPengajuanScreen(
             onDismissRequest = { showImagePreviewDialog = false },
             containerColor = Color.Black,
             shape = RoundedCornerShape(0.dp),
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
             title = {},
             text = {
                 Box(
@@ -761,6 +945,83 @@ fun AdminEditPengajuanScreen(
         )
     }
 
+    // DIALOG PRATINJAU DOKUMEN SURAT FULL SCREEN (A4 & BISA DI-ZOOM)
+    if (showPdfHtmlPreviewDialog) {
+        val previewHtml = remember(
+            nama, nik, ttl, jenisKelamin, agama, statusPerkawinan, pekerjaan, alamatLengkap,
+            umur, pukulWafat, hariWafat, tanggalWafat, tempatWafat, pukulPemakaman, hariPemakaman,
+            tanggalPemakaman, tempatPemakaman, namaPelapor, nikPelapor, alamatPelapor, hubunganPelapor,
+            hariKejadian, tanggalKejadian, jamKejadian, fieldExtra1, fieldExtra2, nomorSurat
+        ) {
+            SuratHtmlGenerator.generateHtml(context, buildCurrentUpdatedItem(keepExistingId = true))
+        }
+
+        AlertDialog(
+            onDismissRequest = { showPdfHtmlPreviewDialog = false },
+            containerColor = Color(0xFF333333),
+            shape = RoundedCornerShape(0.dp),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier.fillMaxSize(),
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pratinjau Dokumen Surat A4",
+                        style = AppTypography.HeadingMedium.copy(color = Color.White)
+                    )
+                    Text(
+                        text = "Cubit layar untuk zoom",
+                        style = AppTypography.Caption.copy(color = Color.LightGray)
+                    )
+                }
+            },
+            text = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF525659))
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        shadowElevation = 8.dp,
+                        color = Color.White
+                    ) {
+                        AndroidView(
+                            modifier = Modifier.fillMaxSize(),
+                            factory = { ctx ->
+                                WebView(ctx).apply {
+                                    settings.javaScriptEnabled = false
+                                    settings.loadWithOverviewMode = true
+                                    settings.useWideViewPort = true
+                                    settings.builtInZoomControls = true
+                                    settings.displayZoomControls = false
+                                    settings.setSupportZoom(true)
+                                    webViewClient = WebViewClient()
+                                    loadDataWithBaseURL(null, previewHtml, "text/html", "UTF-8", null)
+                                }
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showPdfHtmlPreviewDialog = false },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
+                ) {
+                    Text(text = "Tutup Pratinjau Dokumen", style = AppTypography.ButtonText)
+                }
+            }
+        )
+    }
+
     // DIALOG KONFIRMASI SIMPAN
     if (showConfirmDialog) {
         AlertDialog(
@@ -797,7 +1058,7 @@ fun AdminEditPengajuanScreen(
             text = {
                 Text(
                     text = if (isDiterima)
-                        "Pastikan data koreksi warga dan nomor surat resmi sudah benar."
+                        "Status akan disimpan sebagai TERBIT dan surat resmi akan otomatis dikirim ke email admin (jundilamtara0103@gmail.com)."
                     else
                         "Alasan penolakan akan dikirimkan ke warga.",
                     style = AppTypography.BodyRegular,
@@ -809,57 +1070,24 @@ fun AdminEditPengajuanScreen(
                 Button(
                     onClick = {
                         showConfirmDialog = false
+                        val updatedItem = buildCurrentUpdatedItem(keepExistingId = false)
 
-                        val newId = System.currentTimeMillis().toString()
-                        val waktuKeputusan = getCurrentDateTime()
-
-                        val finalNamaUsaha = when {
-                            isKematian -> hubunganPelapor
-                            isSktm -> pengajuan.namaUsaha
-                            else -> fieldExtra1
+                        if (isDiterima) {
+                            sudahTerbitItem = updatedItem
+                            isSendingEmail = true
+                            coroutineScope.launch {
+                                EmailSenderHelper.sendEmailAutomatic(
+                                    context = context,
+                                    pengajuan = updatedItem,
+                                    onFinished = {
+                                        isSendingEmail = false
+                                        onSaveSuccess(updatedItem)
+                                    }
+                                )
+                            }
+                        } else {
+                            onSaveSuccess(updatedItem)
                         }
-
-                        val finalLokasiUsaha = when {
-                            isKematian -> pengajuan.lokasiUsaha
-                            isSktm -> "No. KK: $fieldExtra1 | Keperluan: $fieldExtra2"
-                            isKehilangan -> "Hari: $hariKejadian | Tanggal: $tanggalKejadian | Jam: $jamKejadian | Barang: $fieldExtra1"
-                            else -> fieldExtra2
-                        }
-
-                        val updatedItem = pengajuan.copy(
-                            id = newId,
-                            namaPemohon = nama,
-                            nik = nik,
-                            tempatTanggalLahir = ttl,
-                            jenisKelamin = jenisKelamin,
-                            agama = agama,
-                            statusPerkawinan = statusPerkawinan,
-                            pekerjaan = pekerjaan,
-                            alamatLengkap = alamatLengkap,
-
-                            // Atribut Spesifik Kematian
-                            umur = if (isKematian) umur else pengajuan.umur,
-                            pukulWafat = if (isKematian) pukulWafat else pengajuan.pukulWafat,
-                            hariWafat = if (isKematian) hariWafat else pengajuan.hariWafat,
-                            tanggalWafat = if (isKematian) tanggalWafat else pengajuan.tanggalWafat,
-                            tempatWafat = if (isKematian) tempatWafat else pengajuan.tempatWafat,
-                            pukulPemakaman = if (isKematian) pukulPemakaman else pengajuan.pukulPemakaman,
-                            hariPemakaman = if (isKematian) hariPemakaman else pengajuan.hariPemakaman,
-                            tanggalPemakaman = if (isKematian) tanggalPemakaman else pengajuan.tanggalPemakaman,
-                            tempatPemakaman = if (isKematian) tempatPemakaman else pengajuan.tempatPemakaman,
-                            namaPelapor = if (isKematian) namaPelapor else pengajuan.namaPelapor,
-                            nikPelapor = if (isKematian) nikPelapor else pengajuan.nikPelapor,
-                            alamatPelapor = if (isKematian) alamatPelapor else pengajuan.alamatPelapor,
-
-                            namaUsaha = finalNamaUsaha,
-                            lokasiUsaha = finalLokasiUsaha,
-                            nomorSurat = nomorSurat.ifBlank { "-" },
-                            status = if (isDiterima) StatusPengajuan.DITERIMA else StatusPengajuan.DITOLAK,
-                            pesanStatus = if (isDiterima) "Surat telah diterbitkan oleh perangkat desa. Silakan ambil di balai desa." else alasanDitolak,
-                            tanggalKeputusan = waktuKeputusan,
-                            pengantarUri = pengajuan.pengantarUri
-                        )
-                        onSaveSuccess(updatedItem)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -886,6 +1114,46 @@ fun AdminEditPengajuanScreen(
                     )
                 }
             }
+        )
+    }
+
+    // DIALOG PENGUNCI LAYAR SAAT MENGIRIM EMAIL OTOMATIS
+    if (isSendingEmail) {
+        AlertDialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp),
+            title = null,
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        color = GreenDesaPrimary,
+                        modifier = Modifier.size(44.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Mengirim Surat Otomatis...",
+                        style = AppTypography.HeadingMedium,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Mohon tunggu, dokumen sedang dikirim ke email admin.",
+                        style = AppTypography.Caption,
+                        color = TextSecondary
+                    )
+                }
+            },
+            confirmButton = {}
         )
     }
 }
@@ -959,6 +1227,6 @@ fun AdminEditTextField(
 }
 
 fun getCurrentDateTime(): String {
-    val sdf = SimpleDateFormat("dd MMMM yyyy, HH.mm 'WIB'", Locale("id", "ID"))
+    val sdf = SimpleDateFormat("dd MMMM yyyy, HH.mm 'WIB'", Locale.forLanguageTag("id-ID"))
     return sdf.format(Date())
 }

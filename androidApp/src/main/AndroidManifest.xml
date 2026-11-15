@@ -4,6 +4,8 @@
     <!-- TAMBAH IZIN KAMERA -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- TAMBAH QUERIES AGAR ANDROID 11+ BISA MENEMUKAN APLIKASI KAMERA -->
     <queries>
         <intent>
