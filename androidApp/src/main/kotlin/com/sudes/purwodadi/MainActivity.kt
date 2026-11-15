@@ -528,6 +528,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                        "surat_preview" -> {
+                            if (selectedPengajuanItem != null) {
+                                SuratPreviewScreen(
+                                    pengajuan = selectedPengajuanItem!!,
+                                    onBackClicked = {
+                                        currentScreen = "admin_dashboard"
+                                    }
+                                )
+                            }
+                        }
                         "home" -> {
                             HomeScreen(
                                 namaLengkap = namaLengkapUser,
