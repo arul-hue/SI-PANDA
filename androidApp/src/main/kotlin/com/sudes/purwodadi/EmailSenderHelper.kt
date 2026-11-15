@@ -2,82 +2,146 @@ package com.sudes.purwodadi
 
 import android.content.Context
 import android.widget.Toast
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.Properties
+import javax.activation.DataHandler
+import javax.activation.FileDataSource
+import javax.mail.Authenticator
+import javax.mail.Message
+import javax.mail.PasswordAuthentication
+import javax.mail.Session
+import javax.mail.Transport
+import javax.mail.internet.InternetAddress
+import javax.mail.internet.MimeBodyPart
+import javax.mail.internet.MimeMessage
+import javax.mail.internet.MimeMultipart
 
 object EmailSenderHelper {
 
-    private const val SERVICE_ID = "service_cgko1cg"
-    private const val TEMPLATE_ID = "template_ak9kmrq"
-    private const val PUBLIC_KEY = "44uDDCpdFJPgyY74y"
+    private data class EmailConfig(
+        val senderEmail: String,
+        val appPassword: String,
+        val targetEmail: String
+    )
+
+    private suspend fun fetchEmailConfigFromFirestore(): EmailConfig? {
+        return try {
+            val snapshot = FirebaseFirestore.getInstance()
+                .collection("pengaturan")
+                .document("email_desa")
+                .get()
+                .await()
+
+            val sender = snapshot.getString("sender_email")?.trim().orEmpty()
+            val password = snapshot.getString("sender_app_password")?.replace(" ", "")?.trim().orEmpty()
+            val target = snapshot.getString("target_email")?.trim().orEmpty()
+
+            if (sender.isBlank() || password.isBlank() || target.isBlank()) {
+                null
+            } else {
+                EmailConfig(sender, password, target)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 
     suspend fun sendEmailAutomatic(
         context: Context,
         pengajuan: PengajuanItem,
         onFinished: (Boolean) -> Unit = {}
     ) {
+        // 1. Ambil konfigurasi email & App Password dari Firestore
+        val config = fetchEmailConfigFromFirestore()
+        if (config == null) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    context,
+                    "Konfigurasi email desa di Firestore belum lengkap.",
+                    Toast.LENGTH_LONG
+                ).show()
+                onFinished(false)
+            }
+            return
+        }
+
+        // Ubah dari PdfSuratGenerator menjadi PdfGeneratorHelper:
+        val pdfFile = PdfGeneratorHelper.generatePdfFile(context, pengajuan)
+        if (pdfFile == null || !pdfFile.exists()) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Gagal membuat file PDF surat.", Toast.LENGTH_LONG).show()
+                onFinished(false)
+            }
+            return
+        }
+
+        // 3. Kirim file PDF sebagai lampiran melalui SMTP Gmail di latar belakang
         withContext(Dispatchers.IO) {
             try {
-                val suratHtmlLengkap = SuratHtmlGenerator.generateSuratLengkapEmail(context, pengajuan)
-
-                val templateParams = JSONObject().apply {
-                    put("to_email", "jundilamtara0103@gmail.com")
-                    put("subject", "Dokumen Resmi Desa: ${pengajuan.jenisSurat} - ${pengajuan.namaPemohon}")
-                    put("surat_html", suratHtmlLengkap)
+                val props = Properties().apply {
+                    put("mail.smtp.host", "smtp.gmail.com")
+                    put("mail.smtp.socketFactory.port", "465")
+                    put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
+                    put("mail.smtp.auth", "true")
+                    put("mail.smtp.port", "465")
                 }
 
-                val payload = JSONObject().apply {
-                    put("service_id", SERVICE_ID)
-                    put("template_id", TEMPLATE_ID)
-                    put("user_id", PUBLIC_KEY)
-                    put("template_params", templateParams)
+                val session = Session.getInstance(props, object : Authenticator() {
+                    override fun getPasswordAuthentication(): PasswordAuthentication {
+                        return PasswordAuthentication(config.senderEmail, config.appPassword)
+                    }
+                })
+
+                val message = MimeMessage(session).apply {
+                    setFrom(InternetAddress(config.senderEmail, "Pelayanan Mandiri Desa Purwodadi Simpang"))
+                    setRecipients(Message.RecipientType.TO, InternetAddress.parse(config.targetEmail))
+                    subject = "Dokumen Resmi Desa (PDF): ${pengajuan.jenisSurat} - ${pengajuan.namaPemohon}"
+
+                    val textPart = MimeBodyPart().apply {
+                        setText(
+                            "Yth. Admin Desa Purwodadi Simpang,\n\n" +
+                                    "Terlampir berkas resmi ${pengajuan.jenisSurat} atas nama ${pengajuan.namaPemohon} " +
+                                    "(NIK: ${pengajuan.nik}) dalam format PDF ukuran A4 siap cetak.\n\n" +
+                                    "Hormat kami,\nSistem Layanan Mandiri SUDES Purwodadi Simpang"
+                        )
+                    }
+
+                    val pdfAttachmentPart = MimeBodyPart().apply {
+                        dataHandler = DataHandler(FileDataSource(pdfFile))
+                        fileName = pdfFile.name
+                    }
+
+                    val multipart = MimeMultipart().apply {
+                        addBodyPart(textPart)
+                        addBodyPart(pdfAttachmentPart)
+                    }
+
+                    setContent(multipart)
                 }
 
-                val url = URL("https://api.emailjs.com/api/v1.0/email/send")
-                val conn = (url.openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-                    setRequestProperty("Origin", "http://localhost")
-                    doOutput = true
-                    connectTimeout = 15000
-                    readTimeout = 15000
-                }
+                Transport.send(message)
 
-                OutputStreamWriter(conn.outputStream, "UTF-8").use { writer ->
-                    writer.write(payload.toString())
-                    writer.flush()
-                }
-
-                val responseCode = conn.responseCode
-                val isSuccess = responseCode in 200..299
+                // Hapus file sementara di cache setelah berhasil terkirim
+                pdfFile.delete()
 
                 withContext(Dispatchers.Main) {
-                    if (isSuccess) {
-                        Toast.makeText(
-                            context,
-                            "Surat resmi berhasil dikirim otomatis ke email admin!",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } else {
-                        val errorMsg = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: "HTTP $responseCode"
-                        Toast.makeText(
-                            context,
-                            "Gagal mengirim email ($responseCode): $errorMsg",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                    onFinished(isSuccess)
+                    Toast.makeText(
+                        context,
+                        "File PDF surat berhasil dikirim ke ${config.targetEmail}!",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    onFinished(true)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        "Terjadi kesalahan jaringan saat mengirim email: ${e.message}",
+                        "Gagal mengirim email PDF: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                     onFinished(false)

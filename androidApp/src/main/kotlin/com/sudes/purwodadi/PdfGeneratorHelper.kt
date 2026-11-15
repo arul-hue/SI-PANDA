@@ -12,8 +12,10 @@ import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.coroutines.resume
 
 object PdfGeneratorHelper {
 
@@ -21,6 +23,19 @@ object PdfGeneratorHelper {
         is Activity -> this
         is ContextWrapper -> baseContext.findActivity()
         else -> null
+    }
+
+    suspend fun generatePdfFile(
+        context: Context,
+        pengajuan: PengajuanItem
+    ): File? = suspendCancellableCoroutine { continuation ->
+        Handler(Looper.getMainLooper()).post {
+            generatePdfFromHtml(context, pengajuan) { file ->
+                if (continuation.isActive) {
+                    continuation.resume(file)
+                }
+            }
+        }
     }
 
     fun generatePdfFromHtml(
@@ -34,15 +49,17 @@ object PdfGeneratorHelper {
         )
         val activity = context.findActivity()
 
+        // Ukuran A4 proporsional 144 DPI (1190 x 1684 px)
+        // 210mm pada 96 DPI = 793.7 px -> dikali skala 150% = 1190.5 px (pas 1 halaman A4)
         val pageWidth = 1190
         val pageHeight = 1684
 
         val webView = WebView(context).apply {
             setBackgroundColor(Color.WHITE)
             settings.javaScriptEnabled = false
-            settings.loadWithOverviewMode = true
-            settings.useWideViewPort = true
-            setInitialScale(200)
+            settings.loadWithOverviewMode = false
+            settings.useWideViewPort = false
+            setInitialScale(150)
             alpha = 1f
             translationX = -pageWidth.toFloat()
         }

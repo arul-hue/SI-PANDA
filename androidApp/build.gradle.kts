@@ -11,13 +11,20 @@ kotlin {
         jvmTarget = JvmTarget.JVM_11
     }
 }
+
 dependencies {
     // --- Tambahan Firebase untuk SUDES Purwodadi ---
     implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
     // ----------------------------------------------
+
+    // --- Pengiriman Email SMTP dengan Lampiran PDF ---
+    implementation("com.sun.mail:android-mail:1.6.7")
+    implementation("com.sun.mail:android-activation:1.6.7")
+    // -------------------------------------------------
 
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
@@ -41,9 +48,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
 
-    implementation("io.coil-kt:coil-compose:2.6.0") // atau versi stabil terdekat
-
-    implementation("com.google.firebase:firebase-storage")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
 
 android {
@@ -60,6 +65,7 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += listOf("META-INF/NOTICE.md", "META-INF/LICENSE.md")
         }
     }
     buildTypes {
