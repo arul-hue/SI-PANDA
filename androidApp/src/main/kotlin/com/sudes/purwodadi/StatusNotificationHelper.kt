@@ -17,6 +17,44 @@ object StatusNotificationHelper {
     private const val CHANNEL_ID = "sudes_status_surat"
     private const val CHANNEL_NAME = "Status Pengajuan Surat Desa"
 
+    fun showNewPengajuanAdminNotification(context: Context, item: PengajuanItem) {
+        createNotificationChannel(context)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+        }
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            item.id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val judul = "Pengajuan Surat Baru Masuk"
+        val isiPesan = "${item.namaPemohon} mengajukan ${item.jenisSurat}. Segera tinjau dan proses."
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.logo_desa)
+            .setContentTitle(judul)
+            .setContentText(isiPesan)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(isiPesan))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(item.id.hashCode(), notification)
+    }
+
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(

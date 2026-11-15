@@ -47,11 +47,8 @@ class MainActivity : ComponentActivity() {
             if (nik.isNotBlank()) putString("USER_NIK", nik)
             apply()
         }
-        if (role == "admin") {
-            PengajuanMonitorService.stop(this)
-        } else {
-            PengajuanMonitorService.start(this)
-        }
+        // Jalankan pemantau untuk warga maupun admin selama akun sedang login
+        PengajuanMonitorService.start(this)
     }
 
     private fun getSavedUserRole(): String {

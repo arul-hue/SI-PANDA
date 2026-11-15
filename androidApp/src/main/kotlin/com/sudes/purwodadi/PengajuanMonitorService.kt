@@ -50,9 +50,9 @@ class PengajuanMonitorService : Service() {
             val channel = NotificationChannel(
                 SERVICE_CHANNEL_ID,
                 "Pemantau Status Surat Desa",
-                NotificationManager.IMPORTANCE_MIN // Tidak berbunyi & tidak mengganggu layar
+                NotificationManager.IMPORTANCE_MIN
             ).apply {
-                description = "Menjaga pembaruan status pengajuan surat tetap aktif"
+                description = "Menjaga pembaruan pengajuan surat tetap aktif"
                 setShowBadge(false)
             }
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -69,10 +69,19 @@ class PengajuanMonitorService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val roleUser = getSharedPreferences("SudesPrefs", Context.MODE_PRIVATE)
+            .getString("USER_ROLE", "warga") ?: "warga"
+
+        val teksService = if (roleUser == "admin") {
+            "Memantau pengajuan surat warga masuk"
+        } else {
+            "Memantau status pengajuan surat Anda"
+        }
+
         val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
             .setSmallIcon(R.drawable.logo_desa)
             .setContentTitle("SUDES Purwodadi Simpang")
-            .setContentText("Memantau status pengajuan surat Anda")
+            .setContentText(teksService)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
@@ -102,13 +111,12 @@ class PengajuanMonitorService : Service() {
                 val nikUser = prefs.getString("USER_NIK", "") ?: ""
                 val namaUser = prefs.getString("USER_NAMA", "") ?: ""
 
-                // Jangan jalankan notifikasi warga jika belum login atau login sebagai admin
-                if (auth.currentUser == null || roleUser == "admin") return@addSnapshotListener
+                if (auth.currentUser == null) return@addSnapshotListener
 
                 for (doc in snapshot.documents) {
                     val id = doc.getString("id") ?: doc.id
                     val jenisSurat = doc.getString("jenisSurat") ?: "Surat Keterangan"
-                    val namaPemohon = doc.getString("namaPemohon") ?: ""
+                    val namaPemohon = doc.getString("namaPemohon") ?: "Warga"
                     val nik = doc.getString("nik") ?: ""
                     val pesanStatus = doc.getString("pesanStatus") ?: ""
                     val statusStr = doc.getString("status") ?: "PROSES"
@@ -121,28 +129,49 @@ class PengajuanMonitorService : Service() {
                     val statusLama = statusSebelumnya[id]
                     statusSebelumnya[id] = status
 
-                    val baruDiputuskan = !isFirstSnapshot &&
-                            status != StatusPengajuan.PROSES &&
-                            (statusLama == null || statusLama != status)
+                    if (!isFirstSnapshot) {
+                        if (roleUser == "admin") {
+                            // NOTIFIKASI UNTUK ADMIN: Jika ada dokumen baru masuk dengan status PROSES
+                            // atau dokumen lama yang diajukan ulang kembali menjadi PROSES
+                            val pengajuanBaruMasuk = status == StatusPengajuan.PROSES &&
+                                    (statusLama == null || statusLama != StatusPengajuan.PROSES)
 
-                    if (baruDiputuskan) {
-                        val nikSama = nikUser.isNotBlank() && nik.trim() == nikUser.trim()
-                        val namaSama = namaUser.isNotBlank() &&
-                                namaUser != "Warga" &&
-                                (namaPemohon.trim().equals(namaUser.trim(), ignoreCase = true) ||
-                                        namaPemohon.trim().contains(namaUser.trim(), ignoreCase = true) ||
-                                        namaUser.trim().contains(namaPemohon.trim(), ignoreCase = true))
+                            if (pengajuanBaruMasuk) {
+                                val itemAdmin = PengajuanItem(
+                                    id = id,
+                                    jenisSurat = jenisSurat,
+                                    namaPemohon = namaPemohon,
+                                    status = status,
+                                    pesanStatus = pesanStatus,
+                                    nik = nik
+                                )
+                                StatusNotificationHelper.showNewPengajuanAdminNotification(this, itemAdmin)
+                            }
+                        } else {
+                            // NOTIFIKASI UNTUK WARGA: Jika surat miliknya berubah dari PROSES ke DITERIMA/DITOLAK
+                            val baruDiputuskan = status != StatusPengajuan.PROSES &&
+                                    (statusLama == null || statusLama != status)
 
-                        if (nikSama || namaSama) {
-                            val itemNotif = PengajuanItem(
-                                id = id,
-                                jenisSurat = jenisSurat,
-                                namaPemohon = namaPemohon,
-                                status = status,
-                                pesanStatus = pesanStatus,
-                                nik = nik
-                            )
-                            StatusNotificationHelper.showStatusNotification(this, itemNotif)
+                            if (baruDiputuskan) {
+                                val nikSama = nikUser.isNotBlank() && nik.trim() == nikUser.trim()
+                                val namaSama = namaUser.isNotBlank() &&
+                                        namaUser != "Warga" &&
+                                        (namaPemohon.trim().equals(namaUser.trim(), ignoreCase = true) ||
+                                                namaPemohon.trim().contains(namaUser.trim(), ignoreCase = true) ||
+                                                namaUser.trim().contains(namaPemohon.trim(), ignoreCase = true))
+
+                                if (nikSama || namaSama) {
+                                    val itemWarga = PengajuanItem(
+                                        id = id,
+                                        jenisSurat = jenisSurat,
+                                        namaPemohon = namaPemohon,
+                                        status = status,
+                                        pesanStatus = pesanStatus,
+                                        nik = nik
+                                    )
+                                    StatusNotificationHelper.showStatusNotification(this, itemWarga)
+                                }
+                            }
                         }
                     }
                 }
@@ -151,7 +180,7 @@ class PengajuanMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY // Otomatis hidup kembali jika dimatikan sistem Android
+        return START_STICKY
     }
 
     override fun onDestroy() {
