@@ -1,19 +1,26 @@
 package com.sudes.purwodadi
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sudes.purwodadi.ui.theme.*
@@ -25,181 +32,262 @@ fun ForgotPasswordScreen(
     onBackToLoginClicked: () -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
+    var showErrorValidation by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // Mengambil state error secara real-time dari ViewModel
     val errorMessage by authViewModel.errorMessage.collectAsState()
 
-    // Menambahkan BackHandler
     BackHandler {
         if (showSuccessDialog) {
             showSuccessDialog = false
-        } else {
+            authViewModel.clearError()
+            onBackToLoginClicked()
+        } else if (!isLoading) {
             authViewModel.clearError()
             onBackToLoginClicked()
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GrayBackground),
-        contentAlignment = Alignment.Center
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            shape = RoundedCornerShape(20.dp),
-            color = Color.White,
-            shadowElevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Header Hijau
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                    color = GreenDesaPrimary
+                    color = GreenDesaPrimary,
+                    shadowElevation = 4.dp
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp)
-                    ) {
-                        Text(
-                            text = "Atur Ulang Password",
-                            style = AppTypography.HeadingLarge.copy(color = Color.White)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Masukkan email terdaftar untuk reset password.",
-                            style = AppTypography.BodyRegular.copy(color = Color.White.copy(alpha = 0.9f))
-                        )
-                    }
-                }
-
-                // Bagian Form Input
-                Column(
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    // Tampilkan kotak error jika ada pesan error dari ViewModel
-                    if (!errorMessage.isNullOrEmpty()) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFFFEE2E2)
-                        ) {
-                            Text(
-                                text = errorMessage ?: "",
-                                color = Color(0xFF991B1B),
-                                style = AppTypography.BodyRegular,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
-                    }
-
-                    Text(
-                        text = "Email",
-                        style = AppTypography.LabelForm,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = {
-                            email = it
-                            if (errorMessage != null) authViewModel.clearError()
-                        },
-                        placeholder = {
-                            Text(
-                                "Masukkan email Anda",
-                                color = TextPlaceholder,
-                                style = AppTypography.BodyRegular
-                            )
-                        },
-                        textStyle = AppTypography.BodyRegular.copy(color = TextPrimary),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            disabledContainerColor = Color.White,
-                            unfocusedBorderColor = GrayBorder,
-                            focusedBorderColor = GreenDesaPrimary,
-                            focusedLabelColor = GreenDesaPrimary,
-                            cursorColor = GreenDesaPrimary
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Button(
-                        onClick = {
-                            authViewModel.sendPasswordResetEmail(email) {
-                                // Dipanggil hanya jika Firebase sukses mengirim email
-                                showSuccessDialog = true
-                            }
-                        },
-                        enabled = !isLoading,
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
+                            .statusBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(24.dp)
+                        IconButton(
+                            onClick = {
+                                authViewModel.clearError()
+                                onBackToLoginClicked()
+                            },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Kembali ke Halaman Masuk",
+                                tint = Color.White
                             )
-                        } else {
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Column {
                             Text(
-                                text = "Kirim Link Reset Password",
-                                style = AppTypography.ButtonText
+                                text = "Atur Ulang Password",
+                                style = AppTypography.HeadingLarge.copy(color = Color.White)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Masukkan email terdaftar untuk reset password",
+                                style = AppTypography.BodyRegular.copy(color = Color.White.copy(alpha = 0.9f))
                             )
                         }
                     }
+                }
+            },
+            containerColor = GrayBackground,
+            contentWindowInsets = WindowInsets.ime
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Box(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.White,
+                        shadowElevation = 4.dp
                     ) {
-                        Box(
+                        Column(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable {
-                                    authViewModel.clearError()
-                                    onBackToLoginClicked()
-                                }
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .fillMaxWidth()
+                                .padding(20.dp)
                         ) {
-                            Text(
-                                text = "Kembali ke Halaman Masuk",
-                                color = GreenDesaPrimary,
-                                style = AppTypography.ButtonText
+                            // INPUT EMAIL DENGAN VALIDASI MERAH
+                            val isEmailError = showErrorValidation && email.isBlank()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Email",
+                                    style = AppTypography.LabelForm,
+                                    color = if (isEmailError) Color(0xFFDC2626) else TextPrimary
+                                )
+                                if (isEmailError) {
+                                    Text(
+                                        text = "Wajib diisi",
+                                        style = AppTypography.Caption.copy(color = Color(0xFFDC2626))
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = email,
+                                onValueChange = {
+                                    email = it
+                                    if (errorMessage != null) authViewModel.clearError()
+                                },
+                                placeholder = {
+                                    Text(
+                                        "Masukkan email Anda",
+                                        color = TextPlaceholder,
+                                        style = AppTypography.BodyRegular
+                                    )
+                                },
+                                textStyle = AppTypography.BodyRegular.copy(color = TextPrimary),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                singleLine = true,
+                                isError = isEmailError,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = Color.White,
+                                    unfocusedContainerColor = Color.White,
+                                    disabledContainerColor = Color.White,
+                                    unfocusedBorderColor = if (isEmailError) Color(0xFFDC2626) else GrayBorder,
+                                    focusedBorderColor = if (isEmailError) Color(0xFFDC2626) else GreenDesaPrimary,
+                                    errorBorderColor = Color(0xFFDC2626),
+                                    focusedLabelColor = GreenDesaPrimary,
+                                    cursorColor = GreenDesaPrimary
+                                )
                             )
+
+                            // KOTAK PERINGATAN WAJIB DIISI / ERROR FIREBASE
+                            if (isEmailError) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFFEF2F2),
+                                    border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = "Peringatan",
+                                            tint = Color(0xFFDC2626),
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            text = "Mohon isi alamat email terlebih dahulu.",
+                                            color = Color(0xFFDC2626),
+                                            style = AppTypography.BodyRegular.copy(
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        )
+                                    }
+                                }
+                            } else if (!errorMessage.isNullOrEmpty()) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFFEF2F2),
+                                    border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = "Peringatan",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            text = errorMessage ?: "",
+                                            color = MaterialTheme.colorScheme.error,
+                                            style = AppTypography.BodyRegular.copy(
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            Button(
+                                onClick = {
+                                    if (email.isBlank()) {
+                                        showErrorValidation = true
+                                    } else {
+                                        showErrorValidation = false
+                                        authViewModel.sendPasswordResetEmail(email.trim()) {
+                                            showSuccessDialog = true
+                                        }
+                                    }
+                                },
+                                enabled = !isLoading,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
+                            ) {
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Reset Password",
+                                        style = AppTypography.ButtonText
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        // POPUP SUKSES
+        // POPUP SUKSES (Menutupi layar penuh & memblokir klik latar belakang)
         if (showSuccessDialog) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {}
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {},
                     shape = RoundedCornerShape(24.dp),
                     color = Color(0xFFF0FDF4),
                     shadowElevation = 8.dp

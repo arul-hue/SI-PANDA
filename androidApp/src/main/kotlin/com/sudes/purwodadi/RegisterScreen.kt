@@ -50,59 +50,62 @@ fun RegisterScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     BackHandler {
-        onBackToLoginClicked()
+        if (showSuccessDialog) {
+            showSuccessDialog = false
+            onBackToLoginClicked()
+        } else if (!isAnyLoading) {
+            onBackToLoginClicked()
+        }
     }
 
-    Scaffold(
-        topBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = GreenDesaPrimary
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = GreenDesaPrimary
                 ) {
-                    IconButton(
-                        onClick = onBackToLoginClicked,
-                        modifier = Modifier.size(40.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Kembali ke Halaman Masuk",
-                            tint = Color.White
-                        )
-                    }
+                        IconButton(
+                            onClick = onBackToLoginClicked,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Kembali ke Halaman Masuk",
+                                tint = Color.White
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                    Column {
-                        Text(
-                            text = "Buat Akun Baru",
-                            style = AppTypography.HeadingLarge.copy(color = Color.White)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Silakan isi data diri Anda",
-                            style = AppTypography.BodyRegular.copy(color = Color.White.copy(alpha = 0.9f))
-                        )
+                        Column {
+                            Text(
+                                text = "Buat Akun Baru",
+                                style = AppTypography.HeadingLarge.copy(color = Color.White)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Silakan isi data diri Anda",
+                                style = AppTypography.BodyRegular.copy(color = Color.White.copy(alpha = 0.9f))
+                            )
+                        }
                     }
                 }
-            }
-        },
-        containerColor = GrayBackground,
-        contentWindowInsets = WindowInsets.ime
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+            },
+            containerColor = GrayBackground,
+            contentWindowInsets = WindowInsets.ime
+        ) { innerPadding ->
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
                 contentPadding = PaddingValues(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -331,94 +334,105 @@ fun RegisterScreen(
                     }
                 }
             }
+        }
 
-            if (isAnyLoading) {
-                Box(
+        // OVERLAY LOADING (Menutupi layar penuh & memblokir klik belakang)
+        if (isAnyLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {},
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = GreenDesaPrimary,
+                    modifier = Modifier.size(50.dp)
+                )
+            }
+        }
+
+        // POPUP SUKSES (Menutupi layar penuh & memblokir klik latar belakang)
+        if (showSuccessDialog) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {}
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
+                        .fillMaxWidth()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {},
-                    contentAlignment = Alignment.Center
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color(0xFFF0FDF4),
+                    shadowElevation = 8.dp
                 ) {
-                    CircularProgressIndicator(
-                        color = GreenDesaPrimary,
-                        modifier = Modifier.size(50.dp)
-                    )
-                }
-            }
-
-            if (showSuccessDialog) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFFF0FDF4),
-                        shadowElevation = 8.dp
+                    Column(
+                        modifier = Modifier.padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            modifier = Modifier.padding(28.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Surface(
+                            modifier = Modifier.size(68.dp),
+                            shape = CircleShape,
+                            color = GreenDesaLight
                         ) {
-                            Surface(
-                                modifier = Modifier.size(68.dp),
-                                shape = CircleShape,
-                                color = GreenDesaLight
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = "Sukses",
-                                        tint = GreenDesaPrimary,
-                                        modifier = Modifier.size(36.dp)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(18.dp))
-
-                            Text(
-                                text = "Pendaftaran Berhasil!",
-                                style = AppTypography.HeadingLarge,
-                                color = GreenDesaPrimary,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Text(
-                                text = "Kami telah mengirimkan pesan verifikasi ke alamat email Anda.",
-                                style = AppTypography.BodyRegular,
-                                color = TextSecondary,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Button(
-                                onClick = {
-                                    showSuccessDialog = false
-                                    onBackToLoginClicked()
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
-                            ) {
-                                Text(
-                                    text = "Kembali ke Halaman Masuk",
-                                    style = AppTypography.ButtonText
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Sukses",
+                                    tint = GreenDesaPrimary,
+                                    modifier = Modifier.size(36.dp)
                                 )
                             }
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        Text(
+                            text = "Pendaftaran Berhasil!",
+                            style = AppTypography.HeadingLarge,
+                            color = GreenDesaPrimary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Kami telah mengirimkan pesan verifikasi ke alamat email Anda.",
+                            style = AppTypography.BodyRegular,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Button(
+                            onClick = {
+                                showSuccessDialog = false
+                                onBackToLoginClicked()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = GreenDesaPrimary)
+                        ) {
+                            Text(
+                                text = "Kembali ke Halaman Masuk",
+                                style = AppTypography.ButtonText
+                            )
                         }
                     }
                 }
