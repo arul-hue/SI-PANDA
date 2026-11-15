@@ -6,6 +6,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
     <!-- TAMBAH QUERIES AGAR ANDROID 11+ BISA MENEMUKAN APLIKASI KAMERA -->
     <queries>
         <intent>
@@ -41,6 +45,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- FOREGROUND SERVICE PEMANTAU STATUS SURAT REAL-TIME -->
+        <service
+            android:name="com.sudes.purwodadi.PengajuanMonitorService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
     </application>
 

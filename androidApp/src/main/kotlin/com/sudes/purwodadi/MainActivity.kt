@@ -1,11 +1,15 @@
 package com.sudes.purwodadi
 
+import android.Manifest
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,16 +22,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
 import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.lifecycle.lifecycleScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.launch
 import com.sudes.purwodadi.ui.theme.*
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val authViewModel by lazy { AuthViewModel() }
@@ -35,9 +39,19 @@ class MainActivity : ComponentActivity() {
     private val firestore = FirebaseFirestore.getInstance()
 
     // Fungsi Helper untuk Menyimpan Sesi Role Admin/Warga di Lokal HP
-    private fun saveUserRole(role: String) {
+    private fun saveUserSession(role: String, nama: String = "", nik: String = "") {
         val sharedPreferences = getSharedPreferences("SudesPrefs", MODE_PRIVATE)
-        sharedPreferences.edit().putString("USER_ROLE", role).apply()
+        sharedPreferences.edit().apply {
+            putString("USER_ROLE", role)
+            if (nama.isNotBlank()) putString("USER_NAMA", nama)
+            if (nik.isNotBlank()) putString("USER_NIK", nik)
+            apply()
+        }
+        if (role == "admin") {
+            PengajuanMonitorService.stop(this)
+        } else {
+            PengajuanMonitorService.start(this)
+        }
     }
 
     private fun getSavedUserRole(): String {
@@ -47,7 +61,8 @@ class MainActivity : ComponentActivity() {
 
     private fun clearUserRole() {
         val sharedPreferences = getSharedPreferences("SudesPrefs", MODE_PRIVATE)
-        sharedPreferences.edit().remove("USER_ROLE").apply()
+        sharedPreferences.edit().clear().apply()
+        PengajuanMonitorService.stop(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,8 +96,27 @@ class MainActivity : ComponentActivity() {
                 var selectedAdminStatusFilter by remember { mutableStateOf("Semua") }
                 var selectedAdminSortOrder by remember { mutableStateOf("Terbaru") }
 
-                // SINKRONISASI REAL-TIME AMAN & SESUAI MODEL PENGAJUAN
+                val context = this
+                val currentNikUser by rememberUpdatedState(nikUser)
+                val currentNamaUser by rememberUpdatedState(namaLengkapUser)
+                val currentRoleUser by rememberUpdatedState(roleUser)
+
+                // Minta izin notifikasi otomatis pada Android 13+
+                val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+                ) { /* izin diproses */ }
+
+                LaunchedEffect(Unit) {
+                    StatusNotificationHelper.createNotificationChannel(context)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+
+                // SINKRONISASI REAL-TIME AMAN & NOTIFIKASI PERUBAHAN STATUS
                 val listPengajuan = remember { mutableStateListOf<PengajuanItem>() }
+                val statusSebelumnya = remember { mutableMapOf<String, StatusPengajuan>() }
+                var isFirstSnapshot by remember { mutableStateOf(true) }
 
                 LaunchedEffect(Unit) {
                     firestore.collection("pengajuan")
@@ -146,6 +180,35 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 }
+
+                                // Cek apakah ada pengajuan milik warga yang baru berubah statusnya
+                                for (item in tempList) {
+                                    val statusLama = statusSebelumnya[item.id]
+                                    statusSebelumnya[item.id] = item.status
+
+                                    // Tangkap perubahan status BAIK jika ID dokumen tetap (statusLama != item.status)
+                                    // MAUPUN jika Admin membuat dokumen ID baru (statusLama == null) setelah snapshot awal
+                                    val baruDiputuskan = !isFirstSnapshot &&
+                                            item.status != StatusPengajuan.PROSES &&
+                                            (statusLama == null || statusLama != item.status)
+
+                                    if (baruDiputuskan && currentRoleUser != "admin") {
+                                        val nikSama = currentNikUser.isNotBlank() &&
+                                                item.nik.trim() == currentNikUser.trim()
+
+                                        val namaSama = currentNamaUser.isNotBlank() &&
+                                                currentNamaUser != "Warga" &&
+                                                (item.namaPemohon.trim().equals(currentNamaUser.trim(), ignoreCase = true) ||
+                                                        item.namaPemohon.trim().contains(currentNamaUser.trim(), ignoreCase = true) ||
+                                                        currentNamaUser.trim().contains(item.namaPemohon.trim(), ignoreCase = true))
+
+                                        if (nikSama || namaSama) {
+                                            StatusNotificationHelper.showStatusNotification(context, item)
+                                        }
+                                    }
+                                }
+                                isFirstSnapshot = false
+
                                 listPengajuan.clear()
                                 listPengajuan.addAll(tempList)
                             }
@@ -169,7 +232,7 @@ class MainActivity : ComponentActivity() {
                                     alamatUser = document.getString("alamatLengkap")?.takeIf { it != "-" } ?: ""
 
                                     roleUser = document.getString("role") ?: "warga"
-                                    saveUserRole(roleUser)
+                                    saveUserSession(roleUser, namaLengkapUser, nikUser)
 
                                     val isNikEmpty = nikUser.isBlank()
                                     val isTglEmpty = tempatTglLahirUser.isBlank()
@@ -207,8 +270,6 @@ class MainActivity : ComponentActivity() {
                         )
                     )
                 }
-
-                val context = this
 
                 if (currentScreen == "home" || currentScreen == "status" || currentScreen == "profile") {
                     BackHandler {
@@ -268,7 +329,7 @@ class MainActivity : ComponentActivity() {
                                 onLoginSuccess = { role ->
                                     val cleanedRole = role.trim().lowercase()
                                     fetchUserData()
-                                    saveUserRole(cleanedRole)
+                                    saveUserSession(cleanedRole)
 
                                     if (cleanedRole == "admin") {
                                         currentScreen = "admin_dashboard"
@@ -338,7 +399,6 @@ class MainActivity : ComponentActivity() {
                                     selectedAlasanDitolak = pengajuanItem.pesanStatus
                                     selectedNamaFileRt = pengajuanItem.pengantarUri.ifBlank { "pengantar_rt.jpg" }
 
-                                    // 👇 PEMETAAN DINAMIS AGAR DATA DI ADMIN DETAIL TIDAK HILANG
                                     val baseFields = mutableListOf<DetailFieldItem>()
 
                                     when {
@@ -346,7 +406,6 @@ class MainActivity : ComponentActivity() {
                                             baseFields.addAll(
                                                 listOf(
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Pelaku Usaha"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -355,9 +414,7 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Usaha"),
-
                                                     DetailFieldItem("Nama / Deskripsi Usaha", pengajuanItem.namaUsaha.ifBlank { "-" }),
                                                     DetailFieldItem("Lokasi Usaha", pengajuanItem.lokasiUsaha.ifBlank { "-" })
                                                 )
@@ -366,9 +423,7 @@ class MainActivity : ComponentActivity() {
                                         pengajuanItem.jenisSurat.contains("Domisili", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -376,9 +431,7 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap (KTP)", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Domisili"),
-
                                                     DetailFieldItem("Alamat Tempat Tinggal Saat Ini", pengajuanItem.lokasiUsaha.ifBlank { "-" })
                                                 )
                                             )
@@ -386,9 +439,7 @@ class MainActivity : ComponentActivity() {
                                         pengajuanItem.jenisSurat.contains("Kehilangan", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Pelapor"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -396,22 +447,18 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Kehilangan"),
-
                                                     DetailFieldItem("Hari Kejadian", pengajuanItem.hariKejadian.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Kejadian", pengajuanItem.tanggalKejadian.ifBlank { "-" }),
                                                     DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" }),
-                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } }),
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } })
                                                 )
                                             )
                                         }
                                         pengajuanItem.jenisSurat.contains("Kematian", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Almarhum / Almarhumah"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Umur", pengajuanItem.umur.ifBlank { "-" }),
@@ -421,23 +468,17 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Kematian"),
-
                                                     DetailFieldItem("Jam Wafat", pengajuanItem.pukulWafat.ifBlank { "-" }),
                                                     DetailFieldItem("Hari Wafat", pengajuanItem.hariWafat.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Wafat", pengajuanItem.tanggalWafat.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat Wafat", pengajuanItem.tempatWafat.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Pemakaman"),
-
                                                     DetailFieldItem("Jam Pemakaman", pengajuanItem.pukulPemakaman.ifBlank { "-" }),
                                                     DetailFieldItem("Hari Pemakaman", pengajuanItem.hariPemakaman.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Pemakaman", pengajuanItem.tanggalPemakaman.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat Pemakaman (TPU)", pengajuanItem.tempatPemakaman.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Pelapor"),
-
                                                     DetailFieldItem("Nama Pelapor", pengajuanItem.namaPelapor.ifBlank { "-" }),
                                                     DetailFieldItem("NIK Pelapor", pengajuanItem.nikPelapor.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Pelapor", pengajuanItem.alamatPelapor.ifBlank { "-" }),
@@ -457,9 +498,7 @@ class MainActivity : ComponentActivity() {
 
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -468,9 +507,7 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Keluarga & Keperluan"),
-
                                                     DetailFieldItem("Nomor Kartu Keluarga (KK)", nomorKkVal),
                                                     DetailFieldItem("Nama Kepala Keluarga (KK)", pengajuanItem.namaUsaha.ifBlank { "-" }),
                                                     DetailFieldItem("Keperluan Surat", keperluanVal.ifBlank { "-" })
@@ -479,8 +516,6 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                     selectedFields = baseFields
-                                    // 👆 END PEMETAAN
-
                                     currentScreen = "admin_detail_pengajuan"
                                 },
                                 onSelesaikanClicked = { pengajuanItem ->
@@ -593,7 +628,6 @@ class MainActivity : ComponentActivity() {
                                     selectedAlasanDitolak = pengajuanItem.pesanStatus
                                     selectedNamaFileRt = pengajuanItem.pengantarUri.ifBlank { "pengantar_rt.jpg" }
 
-                                    // Kelompokkan data detail berdasarkan masing-masing jenis surat
                                     val baseFields = mutableListOf<DetailFieldItem>()
 
                                     when {
@@ -601,7 +635,6 @@ class MainActivity : ComponentActivity() {
                                             baseFields.addAll(
                                                 listOf(
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Pelaku Usaha"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -610,9 +643,7 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Usaha"),
-
                                                     DetailFieldItem("Nama / Deskripsi Usaha", pengajuanItem.namaUsaha.ifBlank { "-" }),
                                                     DetailFieldItem("Lokasi Usaha", pengajuanItem.lokasiUsaha.ifBlank { "-" })
                                                 )
@@ -621,9 +652,7 @@ class MainActivity : ComponentActivity() {
                                         pengajuanItem.jenisSurat.contains("Domisili", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -631,9 +660,7 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap (KTP)", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Domisili"),
-
                                                     DetailFieldItem("Alamat Tempat Tinggal Saat Ini", pengajuanItem.lokasiUsaha.ifBlank { "-" })
                                                 )
                                             )
@@ -641,9 +668,7 @@ class MainActivity : ComponentActivity() {
                                         pengajuanItem.jenisSurat.contains("Kehilangan", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Pelapor"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -651,22 +676,18 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Agama", pengajuanItem.agama.ifBlank { "-" }),
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Kehilangan"),
-
                                                     DetailFieldItem("Hari Kejadian", pengajuanItem.hariKejadian.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Kejadian", pengajuanItem.tanggalKejadian.ifBlank { "-" }),
                                                     DetailFieldItem("Jam / Waktu Kejadian", pengajuanItem.jamKejadian.ifBlank { "-" }),
-                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } }),
+                                                    DetailFieldItem("Barang / Surat yang Hilang", pengajuanItem.barangHilang.ifBlank { pengajuanItem.namaUsaha.ifBlank { "-" } })
                                                 )
                                             )
                                         }
                                         pengajuanItem.jenisSurat.contains("Kematian", ignoreCase = true) -> {
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri Almarhum / Almarhumah"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Umur", pengajuanItem.umur.ifBlank { "-" }),
@@ -676,23 +697,17 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan Terakhir", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Kematian"),
-
                                                     DetailFieldItem("Jam Wafat", pengajuanItem.pukulWafat.ifBlank { "-" }),
                                                     DetailFieldItem("Hari Wafat", pengajuanItem.hariWafat.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Wafat", pengajuanItem.tanggalWafat.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat Wafat", pengajuanItem.tempatWafat.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Pemakaman"),
-
                                                     DetailFieldItem("Jam Pemakaman", pengajuanItem.pukulPemakaman.ifBlank { "-" }),
                                                     DetailFieldItem("Hari Pemakaman", pengajuanItem.hariPemakaman.ifBlank { "-" }),
                                                     DetailFieldItem("Tanggal Pemakaman", pengajuanItem.tanggalPemakaman.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat Pemakaman (TPU)", pengajuanItem.tempatPemakaman.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Pelapor"),
-
                                                     DetailFieldItem("Nama Pelapor", pengajuanItem.namaPelapor.ifBlank { "-" }),
                                                     DetailFieldItem("NIK Pelapor", pengajuanItem.nikPelapor.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Pelapor", pengajuanItem.alamatPelapor.ifBlank { "-" }),
@@ -712,9 +727,7 @@ class MainActivity : ComponentActivity() {
 
                                             baseFields.addAll(
                                                 listOf(
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Data Diri"),
-
                                                     DetailFieldItem("Nama Lengkap", pengajuanItem.namaPemohon),
                                                     DetailFieldItem("NIK", pengajuanItem.nik.ifBlank { "-" }),
                                                     DetailFieldItem("Tempat, Tanggal Lahir", pengajuanItem.tempatTanggalLahir.ifBlank { "-" }),
@@ -723,9 +736,7 @@ class MainActivity : ComponentActivity() {
                                                     DetailFieldItem("Status Perkawinan", pengajuanItem.statusPerkawinan.ifBlank { "-" }),
                                                     DetailFieldItem("Pekerjaan", pengajuanItem.pekerjaan.ifBlank { "-" }),
                                                     DetailFieldItem("Alamat Lengkap", pengajuanItem.alamatLengkap.ifBlank { "-" }),
-
                                                     DetailFieldItem("---SECTION_HEADER---", "Detail Keluarga & Keperluan"),
-
                                                     DetailFieldItem("Nomor Kartu Keluarga (KK)", nomorKkVal),
                                                     DetailFieldItem("Nama Kepala Keluarga (KK)", pengajuanItem.namaUsaha.ifBlank { "-" }),
                                                     DetailFieldItem("Keperluan Surat", keperluanVal.ifBlank { "-" })
@@ -1137,7 +1148,7 @@ class MainActivity : ComponentActivity() {
                             if (userId != null) {
                                 firestore.collection("users").document(userId).get().addOnSuccessListener { doc ->
                                     val role = doc.getString("role")?.trim()?.lowercase() ?: "warga"
-                                    saveUserRole(role)
+                                    saveUserSession(role)
                                     authViewModel.setLoading(false)
                                     Toast.makeText(this@MainActivity, "Berhasil masuk dengan Google!", Toast.LENGTH_SHORT).show()
                                     onSuccess()
