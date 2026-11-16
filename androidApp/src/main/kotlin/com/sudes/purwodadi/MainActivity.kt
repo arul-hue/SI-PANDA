@@ -1,5 +1,8 @@
 package com.sudes.purwodadi
 
+import androidx.compose.ui.graphics.toArgb
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import android.Manifest
 import android.content.Context
 import android.os.Build
@@ -63,6 +66,14 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Mengisi latar status bar dengan warna hijau utama untuk SELURUH halaman dari satu tempat
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(GreenDesaPrimary.toArgb()),
+            navigationBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
         super.onCreate(savedInstanceState)
         setContent {
             SudesTheme {
