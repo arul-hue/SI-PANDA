@@ -1,5 +1,8 @@
 package com.sudes.purwodadi
 
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.toArgb
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
@@ -65,6 +68,15 @@ class MainActivity : ComponentActivity() {
         PengajuanMonitorService.stop(this)
     }
 
+    // State global untuk mendeteksi apakah ada popup/dialog yang sedang terbuka di halaman mana pun
+    private var isAnyDialogActive by mutableStateOf(false)
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Saat dialog/popup muncul di halaman mana pun, MainActivity kehilangan fokus (hasFocus = false)
+        isAnyDialogActive = !hasFocus
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Mengisi latar status bar dengan warna hijau utama untuk SELURUH halaman dari satu tempat
         enableEdgeToEdge(
@@ -92,6 +104,27 @@ class MainActivity : ComponentActivity() {
                 var roleUser by remember { mutableStateOf("warga") }
 
                 var showIncompleteProfileDialog by remember { mutableStateOf(false) }
+
+                // Ubah warna status bar ikut menggelap saat popup aktif, dan kembali hijau saat tertutup
+                SideEffect {
+                    val activeStatusBarColor = if (showIncompleteProfileDialog) {
+                        androidx.compose.ui.graphics.lerp(
+                            GreenDesaPrimary,
+                            Color.Black,
+                            0.55f
+                        ).toArgb()
+                    } else {
+                        GreenDesaPrimary.toArgb()
+                    }
+
+                    enableEdgeToEdge(
+                        statusBarStyle = SystemBarStyle.dark(activeStatusBarColor),
+                        navigationBarStyle = SystemBarStyle.light(
+                            android.graphics.Color.TRANSPARENT,
+                            android.graphics.Color.TRANSPARENT
+                        )
+                    )
+                }
 
                 // State untuk melacak asal layar sebelum masuk ke form surat (Status / Detail)
                 var previousScreenBeforeSurat by remember { mutableStateOf("status") }
@@ -1036,13 +1069,31 @@ class MainActivity : ComponentActivity() {
                     }
 
                     if (showIncompleteProfileDialog) {
-                        AlertDialog(
-                            onDismissRequest = { },
-                            containerColor = Color.White,
-                            shape = RoundedCornerShape(20.dp),
-                            title = {
+                        BackHandler(enabled = true) { /* Blokir tombol Back HP */ }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.55f))
+                                .pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            awaitPointerEvent()
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White,
+                                shadowElevation = 8.dp
+                            ) {
                                 Column(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.padding(24.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Surface(
@@ -1066,23 +1117,15 @@ class MainActivity : ComponentActivity() {
                                         color = TextPrimary,
                                         textAlign = TextAlign.Center
                                     )
-                                }
-                            },
-                            text = {
-                                Text(
-                                    text = "Halo $namaLengkapUser, silakan lengkapi data diri Anda terlebih dahulu agar dapat mengajukan layanan surat dengan lancar.",
-                                    style = AppTypography.BodyRegular,
-                                    color = TextSecondary,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            },
-                            confirmButton = {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp)
-                                ) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Halo $namaLengkapUser, silakan lengkapi data diri Anda terlebih dahulu agar dapat mengajukan layanan surat dengan lancar.",
+                                        style = AppTypography.BodyRegular,
+                                        color = TextSecondary,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
                                     Button(
                                         onClick = {
                                             showIncompleteProfileDialog = false
@@ -1096,9 +1139,7 @@ class MainActivity : ComponentActivity() {
                                     ) {
                                         Text(text = "Lengkapi Sekarang", style = AppTypography.ButtonText)
                                     }
-
                                     Spacer(modifier = Modifier.height(8.dp))
-
                                     OutlinedButton(
                                         onClick = {
                                             showIncompleteProfileDialog = false
@@ -1111,8 +1152,21 @@ class MainActivity : ComponentActivity() {
                                         Text(text = "Nanti Saja", color = TextPrimary, style = AppTypography.ButtonText)
                                     }
                                 }
-                            },
-                            dismissButton = {}
+                            }
+                        }
+                    }
+                    // PEMBLOKIR SENTUHAN GLOBAL: Aktif otomatis setiap kali popup/dialog muncul di halaman mana pun
+                    if (isAnyDialogActive && !showIncompleteProfileDialog) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            awaitPointerEvent()
+                                        }
+                                    }
+                                }
                         )
                     }
                 }
