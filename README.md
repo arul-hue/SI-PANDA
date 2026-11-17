@@ -1,30 +1,73 @@
-This is a Kotlin Multiplatform project targeting Android, Desktop (JVM).
+# SuDes (Surat Desa) — Aplikasi Pelayanan Surat Administrasi Desa Purwodadi Simpang
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+**Topik Proyek:** *Implementasi Sistem Pelayanan Persuratan Desa Berbasis Mobile dalam Mendukung Efisiensi Proses Administrasi di Desa Purwodadi Simpang*  
+**Lokasi Mitra:** Desa Purwodadi Simpang
 
-### Running the apps
-
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
-
-- Android app: `./gradlew :androidApp:assembleDebug`
-- Desktop app:
-  - Hot reload: `./gradlew :desktopApp:hotRun --auto`
-  - Standard run: `./gradlew :desktopApp:run`
-
-### Running tests
-
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
-
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- Desktop tests: `./gradlew :shared:jvmTest`
+**SuDes (Surat Desa)** adalah aplikasi mobile berbasis Android (Kotlin Multiplatform / Jetpack Compose) yang dirancang untuk mempermudah warga Desa Purwodadi Simpang dalam mengajukan berbagai surat keterangan administrasi secara daring (*online*) serta memantau status verifikasinya secara *real-time* langsung dari ponsel.
 
 ---
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+## Tim Pengembang — Kelompok 1
+
+| NIM | Nama Anggota | Peran (*Role*) |
+| :--- | :--- | :--- |
+| `124140096` | **Syahrul Afwan** | Project Manager |
+| `124140197` | **Muhammad Alfarabi** | Software Tester |
+| `124140167` | **Sahal Alvin Zairy** | Frontend Developer |
+| `124140190` | **Jundi Lamtara** | Backend Developer |
+| `124140024` | **Roy Kurniawan** | UI/UX Design |
+
+---
+
+## Fitur Utama
+
+### 1. Portal Warga
+- **Autentikasi Mudah:** Mendukung pendaftaran dan login menggunakan Email/Kata Sandi serta **Google Sign-In**.
+- **Pengajuan 5 Jenis Surat Administrasi:**
+  1. Surat Keterangan Usaha (SKU)
+  2. Surat Keterangan Domisili
+  3. Surat Keterangan Tidak Mampu (SKTM)
+  4. Surat Keterangan Kehilangan
+  5. Surat Keterangan Kematian
+- **Unggah Lampiran:** Mendukung pengambilan foto atau pemilihan berkas surat pengantar RT langsung dari perangkat.
+- **Pelacakan Status Real-Time & Notifikasi:** Memantau progres pengajuan (`Diproses`, `Diterima`, atau `Ditolak`), menerima notifikasi saat status berubah, serta melihat catatan alasan dan mengajukan ulang apabila berkas ditolak.
+- **Manajemen Profil Terpadu:** Pengisian otomatis (*auto-fill*) data kependudukan (NIK, TTL, alamat, pekerjaan, agama, status perkawinan) pada setiap formulir pengajuan.
+
+### 2. Dashboard Admin Desa
+- **Manajemen Antrean Pengajuan:** Melihat seluruh daftar permohonan warga lengkap dengan filter status dan pengurutan waktu.
+- **Verifikasi Detail & Lampiran:** Memeriksa kelengkapan data diri pemohon serta pratinjau foto surat pengantar RT.
+- **Keputusan & Pratinjau Surat:** Menerima atau menolak pengajuan dengan alasan yang jelas, memasukkan nomor surat resmi, serta menghasilkan pratinjau cetak dokumen surat.
+
+---
+
+## Teknologi yang Digunakan
+
+- **Bahasa Pemrograman:** Kotlin (Kotlin Multiplatform)
+- **UI Framework:** Jetpack Compose / Compose Multiplatform (Material Design 3)
+- **Backend & Database:** Firebase Authentication, Cloud Firestore
+- **Autentikasi Pihak Ketiga:** Android Credential Manager & Google Identity Services (Google Sign-In)
+- **Arsitektur & Latar Belakang:** MVVM (`ViewModel` & `StateFlow`), Android Service untuk pemantauan status notifikasi
+
+---
+
+## Unduh & Instalasi (Pengguna)
+
+1. Buka halaman [**Releases**](https://github.com/arul-hue/SuDes/releases) pada repositori ini.
+2. Unduh file `.apk` terbaru yang tersedia pada bagian **Assets**.
+3. Buka file APK yang telah diunduh di perangkat Android Anda, lalu izinkan opsi **Instal dari sumber tidak dikenal** (*Install unknown apps*) jika diminta oleh sistem.
+4. Jalankan aplikasi **SuDes**, lakukan pendaftaran akun baru atau masuk menggunakan akun Google, dan lengkapi data diri pada menu **Profil**.
+
+---
+
+## Panduan Pengembangan Lokal (Developer)
+
+### Prasyarat
+- Android Studio (versi terbaru yang mendukung Kotlin Multiplatform & Jetpack Compose)
+- JDK 17 atau lebih baru
+- Perangkat Android fisik atau Emulator (minimal Android 8.0 / API Level 26)
+
+### Langkah Menjalankan Proyek
+1. **Clone repositori ini:**
+   ```bash
+   git clone [https://github.com/arul-hue/SuDes.git](https://github.com/arul-hue/SuDes.git)
+   cd SuDes
