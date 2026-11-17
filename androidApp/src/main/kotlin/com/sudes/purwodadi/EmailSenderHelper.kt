@@ -97,16 +97,14 @@ object EmailSenderHelper {
                 })
 
                 val message = MimeMessage(session).apply {
-                    setFrom(InternetAddress(config.senderEmail, "Pelayanan Mandiri Desa Purwodadi Simpang"))
+                    setFrom(InternetAddress(config.senderEmail, "Admin SuDes"))
                     setRecipients(Message.RecipientType.TO, InternetAddress.parse(config.targetEmail))
                     subject = "Dokumen Resmi Desa (PDF): ${pengajuan.jenisSurat} - ${pengajuan.namaPemohon}"
 
                     val textPart = MimeBodyPart().apply {
                         setText(
-                            "Yth. Admin Desa Purwodadi Simpang,\n\n" +
                                     "Terlampir berkas resmi ${pengajuan.jenisSurat} atas nama ${pengajuan.namaPemohon} " +
-                                    "(NIK: ${pengajuan.nik}) dalam format PDF ukuran A4 siap cetak.\n\n" +
-                                    "Hormat kami,\nSistem Layanan Mandiri SUDES Purwodadi Simpang"
+                                    "(NIK: ${pengajuan.nik}) dalam format PDF ukuran A4 siap cetak.\n\n"
                         )
                     }
 
