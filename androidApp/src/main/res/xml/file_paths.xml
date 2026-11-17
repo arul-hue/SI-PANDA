@@ -5,4 +5,12 @@
         name="surat_pdf"
         path="surat_pdf/" />
 
+    <external-files-path
+        name="camera_pictures"
+        path="Pictures/" />
+
+    <cache-path
+        name="camera_cache"
+        path="." />
+
 </paths>

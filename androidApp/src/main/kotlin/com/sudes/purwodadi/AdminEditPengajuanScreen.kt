@@ -92,16 +92,28 @@ fun AdminEditPengajuanScreen(
     var alamatPelapor by remember { mutableStateOf(pengajuan.alamatPelapor) }
     var hubunganPelapor by remember { mutableStateOf(pengajuan.namaUsaha) }
 
-    // State Khusus Kehilangan
+    // State Khusus Kehilangan (Prioritaskan properti terpisah, fallback ke format lama lokasiUsaha)
     val savedPartsKehilangan = if (isKehilangan) pengajuan.lokasiUsaha.split(" | ") else listOf()
     var hariKejadian by remember {
-        mutableStateOf(savedPartsKehilangan.find { it.startsWith("Hari:") }?.removePrefix("Hari: ") ?: "")
+        mutableStateOf(
+            pengajuan.hariKejadian.ifBlank {
+                savedPartsKehilangan.find { it.startsWith("Hari:") }?.removePrefix("Hari: ") ?: ""
+            }
+        )
     }
     var tanggalKejadian by remember {
-        mutableStateOf(savedPartsKehilangan.find { it.startsWith("Tanggal:") }?.removePrefix("Tanggal: ") ?: "")
+        mutableStateOf(
+            pengajuan.tanggalKejadian.ifBlank {
+                savedPartsKehilangan.find { it.startsWith("Tanggal:") }?.removePrefix("Tanggal: ") ?: ""
+            }
+        )
     }
     var jamKejadian by remember {
-        mutableStateOf(savedPartsKehilangan.find { it.startsWith("Jam:") }?.removePrefix("Jam: ") ?: "")
+        mutableStateOf(
+            pengajuan.jamKejadian.ifBlank {
+                savedPartsKehilangan.find { it.startsWith("Jam:") }?.removePrefix("Jam: ") ?: ""
+            }
+        )
     }
 
     // Parsing data dinamis surat lain (Usaha, Domisili, Kehilangan, SKTM)
@@ -110,7 +122,9 @@ fun AdminEditPengajuanScreen(
 
     val initialField1 = when {
         isSktm -> if (splitLokasi.isNotEmpty() && splitLokasi[0].startsWith("No. KK: ")) splitLokasi[0].removePrefix("No. KK: ") else ""
-        isKehilangan -> savedPartsKehilangan.find { it.startsWith("Barang:") }?.removePrefix("Barang: ") ?: pengajuan.namaUsaha
+        isKehilangan -> pengajuan.barangHilang.ifBlank {
+            savedPartsKehilangan.find { it.startsWith("Barang:") }?.removePrefix("Barang: ") ?: pengajuan.namaUsaha
+        }
         else -> pengajuan.namaUsaha
     }
 
@@ -155,6 +169,7 @@ fun AdminEditPengajuanScreen(
         val finalNamaUsaha = when {
             isKematian -> hubunganPelapor
             isSktm -> pengajuan.namaUsaha
+            isKehilangan -> fieldExtra1
             else -> fieldExtra1
         }
 
@@ -187,6 +202,10 @@ fun AdminEditPengajuanScreen(
             namaPelapor = if (isKematian) namaPelapor else pengajuan.namaPelapor,
             nikPelapor = if (isKematian) nikPelapor else pengajuan.nikPelapor,
             alamatPelapor = if (isKematian) alamatPelapor else pengajuan.alamatPelapor,
+            hariKejadian = if (isKehilangan) hariKejadian else pengajuan.hariKejadian,
+            tanggalKejadian = if (isKehilangan) tanggalKejadian else pengajuan.tanggalKejadian,
+            jamKejadian = if (isKehilangan) jamKejadian else pengajuan.jamKejadian,
+            barangHilang = if (isKehilangan) fieldExtra1 else pengajuan.barangHilang,
             namaUsaha = finalNamaUsaha,
             lokasiUsaha = finalLokasiUsaha,
             nomorSurat = nomorSurat.ifBlank { "-" },
@@ -241,7 +260,7 @@ fun AdminEditPengajuanScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .imePadding() // agar layar otomatis terangkat mengikuti tinggi keyboard
+                .imePadding()
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {

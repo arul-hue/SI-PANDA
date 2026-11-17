@@ -118,6 +118,8 @@ class PengajuanMonitorService : Service() {
                     val jenisSurat = doc.getString("jenisSurat") ?: "Surat Keterangan"
                     val namaPemohon = doc.getString("namaPemohon") ?: "Warga"
                     val nik = doc.getString("nik") ?: ""
+                    val namaPelapor = doc.getString("namaPelapor") ?: ""
+                    val nikPelapor = doc.getString("nikPelapor") ?: ""
                     val pesanStatus = doc.getString("pesanStatus") ?: ""
                     val statusStr = doc.getString("status") ?: "PROSES"
                     val status = try {
@@ -131,8 +133,7 @@ class PengajuanMonitorService : Service() {
 
                     if (!isFirstSnapshot) {
                         if (roleUser == "admin") {
-                            // NOTIFIKASI UNTUK ADMIN: Jika ada dokumen baru masuk dengan status PROSES
-                            // atau dokumen lama yang diajukan ulang kembali menjadi PROSES
+                            // NOTIFIKASI UNTUK ADMIN
                             val pengajuanBaruMasuk = status == StatusPengajuan.PROSES &&
                                     (statusLama == null || statusLama != StatusPengajuan.PROSES)
 
@@ -148,19 +149,28 @@ class PengajuanMonitorService : Service() {
                                 StatusNotificationHelper.showNewPengajuanAdminNotification(this, itemAdmin)
                             }
                         } else {
-                            // NOTIFIKASI UNTUK WARGA: Jika surat miliknya berubah dari PROSES ke DITERIMA/DITOLAK
+                            // NOTIFIKASI UNTUK WARGA (Mencocokkan Pemohon MAUPUN Pelapor Surat Kematian)
                             val baruDiputuskan = status != StatusPengajuan.PROSES &&
                                     (statusLama == null || statusLama != status)
 
                             if (baruDiputuskan) {
-                                val nikSama = nikUser.isNotBlank() && nik.trim() == nikUser.trim()
-                                val namaSama = namaUser.isNotBlank() &&
+                                val nikSama = nikUser.isNotBlank() &&
+                                        (nik.trim() == nikUser.trim() || nikPelapor.trim() == nikUser.trim())
+
+                                val namaPemohonCocok = namaUser.isNotBlank() &&
                                         namaUser != "Warga" &&
                                         (namaPemohon.trim().equals(namaUser.trim(), ignoreCase = true) ||
                                                 namaPemohon.trim().contains(namaUser.trim(), ignoreCase = true) ||
                                                 namaUser.trim().contains(namaPemohon.trim(), ignoreCase = true))
 
-                                if (nikSama || namaSama) {
+                                val namaPelaporCocok = namaUser.isNotBlank() &&
+                                        namaPelapor.isNotBlank() &&
+                                        namaUser != "Warga" &&
+                                        (namaPelapor.trim().equals(namaUser.trim(), ignoreCase = true) ||
+                                                namaPelapor.trim().contains(namaUser.trim(), ignoreCase = true) ||
+                                                namaUser.trim().contains(namaPelapor.trim(), ignoreCase = true))
+
+                                if (nikSama || namaPemohonCocok || namaPelaporCocok) {
                                     val itemWarga = PengajuanItem(
                                         id = id,
                                         jenisSurat = jenisSurat,

@@ -382,8 +382,8 @@ object SuratHtmlGenerator {
                     <td style="width: 40%; padding-left: 8px; vertical-align: top;">
                         Kepada Yth,<br />
                         <b>Kapolsek Tanjung Bintang</b><br />
-                        Di-<br />
-                        <span style="padding-left: 24px;">Tempat</span>
+                        <b>Di-</b><br />
+                        <span style="padding-left: 24px;"><b>Tempat</b></span>
                     </td>
                 </tr>
             </table>
