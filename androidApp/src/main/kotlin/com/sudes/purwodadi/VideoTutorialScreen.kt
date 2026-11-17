@@ -87,13 +87,12 @@ fun VideoTutorialScreen(
         return
     }
 
-    // JIKA TIDAK, TAMPILKAN DAFTAR MENU VIDEO TUTORIAL
     Scaffold(
         topBar = {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .statusBarsPadding(),
+                    .statusBarsPadding(), // <--- TAMBAHKAN BARIS INI
                 color = GreenDesaPrimary,
                 shadowElevation = 4.dp
             ) {
@@ -104,7 +103,10 @@ fun VideoTutorialScreen(
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onBackClicked) {
+                    IconButton(onClick = {
+                        exoPlayer.release()
+                        onBackClicked()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -113,7 +115,7 @@ fun VideoTutorialScreen(
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Video Tutorial SuDes",
+                        text = "Putar Video Tutorial",
                         style = AppTypography.HeadingMedium.copy(color = Color.White)
                     )
                 }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,14 +16,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
 import com.sudes.purwodadi.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -305,16 +303,28 @@ fun AdminDetailPengajuanScreen(
         }
     }
 
-    // DIALOG PRATINJAU FOTO FULL SCREEN DENGAN FITUR ZOOM & PAN
+    // DIALOG PRATINJAU FOTO FULL SCREEN DENGAN FITUR ZOOM & PAN (PERMANEN BASE64 & URI)
     if (showImagePreviewDialog && pengajuanItem.pengantarUri.isNotBlank()) {
         var scale by remember { mutableStateOf(1f) }
         var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
+        val permanentBitmap = remember(pengajuanItem.pengantarUri) {
+            if (pengajuanItem.pengantarUri.startsWith("data:image")) {
+                ImageStorageHelper.base64ToBitmap(pengajuanItem.pengantarUri)
+            } else {
+                null
+            }
+        }
+
         AlertDialog(
-            onDismissRequest = { showImagePreviewDialog = false },
+            onDismissRequest = { },
             containerColor = Color.Black,
             shape = RoundedCornerShape(0.dp),
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             title = {},
             text = {
                 Box(
@@ -329,19 +339,35 @@ fun AdminDetailPengajuanScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    coil.compose.AsyncImage(
-                        model = Uri.parse(pengajuanItem.pengantarUri),
-                        contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offset.x,
-                                translationY = offset.y
-                            ),
-                        contentScale = ContentScale.Fit
-                    )
+                    if (permanentBitmap != null) {
+                        Image(
+                            bitmap = permanentBitmap.asImageBitmap(),
+                            contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                ),
+                            contentScale = ContentScale.Fit
+                        )
+                    } else {
+                        coil.compose.AsyncImage(
+                            model = Uri.parse(pengajuanItem.pengantarUri),
+                            contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                ),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
                 }
             },
             confirmButton = {

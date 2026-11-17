@@ -920,8 +920,14 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                firestore.collection("pengajuan").document(itemBaru.id)
-                                    .set(itemBaru)
+                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
+                                val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
+                                    ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
+                                } else ""
+                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+
+                                firestore.collection("pengajuan").document(itemPermanen.id)
+                                    .set(itemPermanen)
                                     .addOnSuccessListener {
                                         if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
                                             firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
@@ -951,8 +957,14 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                firestore.collection("pengajuan").document(itemBaru.id)
-                                    .set(itemBaru)
+                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
+                                val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
+                                    ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
+                                } else ""
+                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+
+                                firestore.collection("pengajuan").document(itemPermanen.id)
+                                    .set(itemPermanen)
                                     .addOnSuccessListener {
                                         if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
                                             firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
@@ -983,8 +995,14 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                firestore.collection("pengajuan").document(itemBaru.id)
-                                    .set(itemBaru)
+                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
+                                val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
+                                    ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
+                                } else ""
+                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+
+                                firestore.collection("pengajuan").document(itemPermanen.id)
+                                    .set(itemPermanen)
                                     .addOnSuccessListener {
                                         if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
                                             firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
@@ -1015,8 +1033,14 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                firestore.collection("pengajuan").document(itemBaru.id)
-                                    .set(itemBaru)
+                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
+                                val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
+                                    ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
+                                } else ""
+                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+
+                                firestore.collection("pengajuan").document(itemPermanen.id)
+                                    .set(itemPermanen)
                                     .addOnSuccessListener {
                                         if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
                                             firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()
@@ -1047,8 +1071,14 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                firestore.collection("pengajuan").document(itemBaru.id)
-                                    .set(itemBaru)
+                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
+                                val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
+                                    ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
+                                } else ""
+                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+
+                                firestore.collection("pengajuan").document(itemPermanen.id)
+                                    .set(itemPermanen)
                                     .addOnSuccessListener {
                                         if (itemYangAkanDiedit != null && itemYangAkanDiedit!!.id != itemBaru.id) {
                                             firestore.collection("pengajuan").document(itemYangAkanDiedit!!.id).delete()

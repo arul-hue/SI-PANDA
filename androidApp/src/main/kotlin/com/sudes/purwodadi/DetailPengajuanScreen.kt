@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sudes.purwodadi.ui.theme.*
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
 
 // Data class pendukung untuk menampung pasangan Label dan Nilai secara dinamis
 data class DetailFieldItem(
@@ -327,16 +329,28 @@ fun DetailPengajuanScreen(
         }
     }
 
-    // DIALOG PRATINJAU FOTO FULL SCREEN DENGAN FITUR ZOOM & PAN
+    // DIALOG PRATINJAU FOTO FULL SCREEN DENGAN FITUR ZOOM & PAN (PERMANEN BASE64 & URI)
     if (showImagePreviewDialog && pengantarUriString.isNotBlank()) {
         var scale by remember { mutableStateOf(1f) }
         var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
+        val permanentBitmap = remember(pengantarUriString) {
+            if (pengantarUriString.startsWith("data:image")) {
+                ImageStorageHelper.base64ToBitmap(pengantarUriString)
+            } else {
+                null
+            }
+        }
+
         AlertDialog(
-            onDismissRequest = { showImagePreviewDialog = false },
+            onDismissRequest = { },
             containerColor = Color.Black,
             shape = RoundedCornerShape(0.dp),
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             title = {},
             text = {
                 Box(
@@ -351,19 +365,35 @@ fun DetailPengajuanScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    coil.compose.AsyncImage(
-                        model = Uri.parse(pengantarUriString),
-                        contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offset.x,
-                                translationY = offset.y
-                            ),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                    )
+                    if (permanentBitmap != null) {
+                        androidx.compose.foundation.Image(
+                            bitmap = permanentBitmap.asImageBitmap(),
+                            contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                ),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                    } else {
+                        coil.compose.AsyncImage(
+                            model = Uri.parse(pengantarUriString),
+                            contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                ),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                    }
                 }
             },
             confirmButton = {

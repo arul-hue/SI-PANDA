@@ -4,6 +4,7 @@ import android.net.Uri
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -889,16 +891,28 @@ fun AdminEditPengajuanScreen(
         }
     }
 
-    // DIALOG PRATINJAU FOTO PENGANTAR RT FULL SCREEN
+    // DIALOG PRATINJAU FOTO PENGANTAR RT FULL SCREEN (PERMANEN BASE64 & URI)
     if (showImagePreviewDialog && pengajuan.pengantarUri.isNotBlank()) {
         var scale by remember { mutableStateOf(1f) }
         var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
+        val permanentBitmap = remember(pengajuan.pengantarUri) {
+            if (pengajuan.pengantarUri.startsWith("data:image")) {
+                ImageStorageHelper.base64ToBitmap(pengajuan.pengantarUri)
+            } else {
+                null
+            }
+        }
+
         AlertDialog(
-            onDismissRequest = { showImagePreviewDialog = false },
+            onDismissRequest = { },
             containerColor = Color.Black,
             shape = RoundedCornerShape(0.dp),
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             title = {},
             text = {
                 Box(
@@ -913,19 +927,35 @@ fun AdminEditPengajuanScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    coil.compose.AsyncImage(
-                        model = Uri.parse(pengajuan.pengantarUri),
-                        contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offset.x,
-                                translationY = offset.y
-                            ),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                    )
+                    if (permanentBitmap != null) {
+                        Image(
+                            bitmap = permanentBitmap.asImageBitmap(),
+                            contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                ),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                    } else {
+                        coil.compose.AsyncImage(
+                            model = Uri.parse(pengajuan.pengantarUri),
+                            contentDescription = "Pratinjau Full Screen Surat Pengantar RT",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                ),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -959,10 +989,14 @@ fun AdminEditPengajuanScreen(
         }
 
         AlertDialog(
-            onDismissRequest = { showPdfHtmlPreviewDialog = false },
+            onDismissRequest = { },
             containerColor = Color(0xFF333333),
             shape = RoundedCornerShape(0.dp),
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             modifier = Modifier.fillMaxSize(),
             title = {
                 Row(
@@ -1027,7 +1061,11 @@ fun AdminEditPengajuanScreen(
     // DIALOG KONFIRMASI SIMPAN
     if (showConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
+            onDismissRequest = { },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             containerColor = Color.White,
             shape = RoundedCornerShape(20.dp),
             title = {
