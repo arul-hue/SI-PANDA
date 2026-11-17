@@ -55,7 +55,7 @@ fun VideoTutorialScreen(
         ),
         VideoTutorialItem(
             "Mengecek Status & Ambil Surat",
-            "Panduan mengambil surat di balai desa",
+            "Panduan lengkap langkah demi langkah",
             "04:15 mnt",
             "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
         ),

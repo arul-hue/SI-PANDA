@@ -38,11 +38,7 @@ fun BantuanFaqScreen(
     val faqList = listOf(
         FaqItem(
             question = "Bagaimana cara mengajukan surat online di SuDes?",
-            answer = "Warga dapat masuk ke menu Layanan Surat, pilih jenis surat yang diinginkan, lengkapi formulir data diri yang tersedia, lalu klik tombol kirim. Anda dapat memantau status pengajuan langsung melalui halaman Riwayat Surat."
-        ),
-        FaqItem(
-            question = "Apakah nomor HP wajib diisi saat pendaftaran?",
-            answer = "Tidak. Berdasarkan pembaruan sistem terbaru, kolom nomor HP telah dihapus sepenuhnya. Proses verifikasi dan autentikasi kini menggunakan Akun Google atau Email & Kata Sandi."
+            answer = "Warga dapat masuk ke menu Layanan Surat, pilih jenis surat yang diinginkan, lengkapi formulir data diri yang tersedia, lalu klik tombol kirim. Anda dapat memantau status pengajuan langsung melalui halaman Status Surat."
         ),
         FaqItem(
             question = "Bagaimana cara mengganti email atau kata sandi akun?",
@@ -54,7 +50,7 @@ fun BantuanFaqScreen(
         ),
         FaqItem(
             question = "Bagaimana cara mengambil surat yang sudah disetujui?",
-            answer = "Jika pengajuan surat Anda telah berstatus 'Disetujui' oleh pihak desa, warga dapat langsung datang ke Balai Desa Purwodadi Simpang dengan membawa dokumen pendukung atau menunjukkan bukti digital di aplikasi."
+            answer = "Jika pengajuan surat Anda telah berstatus 'Disetujui' oleh pihak desa, warga dapat langsung datang ke Balai Desa Purwodadi Simpang dengan menunjukkan bukti digital di aplikasi."
         ),
         FaqItem(
             question = "Apa yang harus dilakukan jika pengajuan surat ditolak?",

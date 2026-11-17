@@ -437,7 +437,7 @@ fun GantiEmailScreen(
             },
             text = {
                 Text(
-                    text = "Silakan cek kotak masuk email baru Anda ($emailBaru) dan klik tautan verifikasi. Setelah itu, klik tombol **'Segarkan Sesi (Masuk Ulang)'** untuk memperbarui email akun Anda.",
+                    text = "Silakan cek kotak masuk email baru Anda ($emailBaru).",
                     style = AppTypography.BodyRegular,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,

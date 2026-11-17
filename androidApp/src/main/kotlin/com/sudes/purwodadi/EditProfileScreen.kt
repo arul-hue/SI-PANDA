@@ -320,7 +320,7 @@ fun EditProfileScreen(
             },
             text = {
                 Text(
-                    text = "Data diri Anda telah berhasil diperbarui dan tersimpan permanen.",
+                    text = "Data diri Anda telah berhasil diperbarui.",
                     style = AppTypography.BodyRegular,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,

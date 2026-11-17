@@ -171,7 +171,7 @@ fun RegisterScreen(
                                 label = "Nama Lengkap",
                                 value = namaLengkap,
                                 onValueChange = { namaLengkap = it },
-                                placeholder = "Masukkan nama lengkap sesuai KTP",
+                                placeholder = "Masukkan nama lengkap",
                                 isError = showErrorValidation && namaLengkap.isBlank()
                             )
 

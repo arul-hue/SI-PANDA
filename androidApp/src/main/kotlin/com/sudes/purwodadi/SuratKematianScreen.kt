@@ -407,7 +407,7 @@ fun SuratKematianScreen(
             // KARTU 1: DATA DIRI ALMARHUM / ALMARHUMAH
             KematianCardSection(title = "DATA DIRI ALMARHUM / ALMARHUMAH") {
                 KematianFormTextField(label = "Nama Lengkap", value = namaAlmarhum, onValueChange = { namaAlmarhum = it }, placeholder = "Masukkan nama almarhum/almarhumah", isError = showErrorValidation && namaAlmarhum.isBlank())
-                KematianFormTextField(label = "NIK", value = nikAlmarhum, onValueChange = { nikAlmarhum = it }, placeholder = "Masukkan 16 digit NIK", isError = showErrorValidation && nikAlmarhum.isBlank())
+                KematianFormTextField(label = "NIK", value = nikAlmarhum, onValueChange = { nikAlmarhum = it }, placeholder = "Masukkan 16 digit NIK almarhum", isError = showErrorValidation && nikAlmarhum.isBlank())
                 KematianFormTextField(label = "Umur", value = umur, onValueChange = { umur = it }, placeholder = "Contoh: 65 Tahun", isError = showErrorValidation && umur.isBlank())
                 KematianFormTextField(label = "Tempat, Tanggal Lahir", value = tempatTanggalLahir, onValueChange = { tempatTanggalLahir = it }, placeholder = "Contoh: Bandar Lampung, 01 Januari 1961", isError = showErrorValidation && tempatTanggalLahir.isBlank())
 
