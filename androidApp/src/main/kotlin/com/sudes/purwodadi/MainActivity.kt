@@ -73,12 +73,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        // Saat dialog/popup muncul di halaman mana pun, MainActivity kehilangan fokus (hasFocus = false)
         isAnyDialogActive = !hasFocus
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Mengisi latar status bar dengan warna hijau utama untuk SELURUH halaman dari satu tempat
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(GreenDesaPrimary.toArgb()),
             navigationBarStyle = SystemBarStyle.light(
@@ -102,10 +100,10 @@ class MainActivity : ComponentActivity() {
                 var statusUser by remember { mutableStateOf("") }
                 var alamatUser by remember { mutableStateOf("") }
                 var roleUser by remember { mutableStateOf("warga") }
+                var currentUserId by remember { mutableStateOf(auth.currentUser?.uid ?: "") }
 
                 var showIncompleteProfileDialog by remember { mutableStateOf(false) }
 
-                // Ubah warna status bar ikut menggelap saat popup aktif, dan kembali hijau saat tertutup
                 SideEffect {
                     val activeStatusBarColor = if (showIncompleteProfileDialog) {
                         androidx.compose.ui.graphics.lerp(
@@ -126,7 +124,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // State untuk melacak asal layar sebelum masuk ke form surat (Status / Detail)
                 var previousScreenBeforeSurat by remember { mutableStateOf("status") }
 
                 // State untuk mempertahankan pilihan filter dan urutan waktu di StatusScreen (Warga)
@@ -141,6 +138,7 @@ class MainActivity : ComponentActivity() {
                 val currentNikUser by rememberUpdatedState(nikUser)
                 val currentNamaUser by rememberUpdatedState(namaLengkapUser)
                 val currentRoleUser by rememberUpdatedState(roleUser)
+                val activeUidState by rememberUpdatedState(currentUserId)
 
                 // Minta izin notifikasi otomatis pada Android 13+
                 val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -169,12 +167,17 @@ class MainActivity : ComponentActivity() {
                                     try {
                                         val item = doc.toObject(PengajuanItem::class.java)
                                         if (item != null) {
-                                            val finalItem = if (item.id.isBlank()) item.copy(id = doc.id) else item
+                                            val docUid = item.userId.ifBlank { doc.getString("userId") ?: "" }
+                                            val finalItem = item.copy(
+                                                id = item.id.ifBlank { doc.id },
+                                                userId = docUid
+                                            )
                                             tempList.add(finalItem)
                                         }
                                     } catch (ex: Exception) {
                                         try {
                                             val id = doc.getString("id") ?: doc.id
+                                            val docUserId = doc.getString("userId") ?: ""
                                             val jenisSurat = doc.getString("jenisSurat") ?: "Surat Keterangan Usaha"
                                             val namaPemohon = doc.getString("namaPemohon") ?: "Warga"
                                             val tanggal = doc.getString("tanggal") ?: ""
@@ -190,6 +193,8 @@ class MainActivity : ComponentActivity() {
                                             val statusPerkawinan = doc.getString("statusPerkawinan") ?: ""
                                             val pekerjaan = doc.getString("pekerjaan") ?: ""
                                             val alamatLengkap = doc.getString("alamatLengkap") ?: ""
+                                            val namaPelapor = doc.getString("namaPelapor") ?: ""
+                                            val nikPelapor = doc.getString("nikPelapor") ?: ""
                                             val namaUsaha = doc.getString("namaUsaha") ?: ""
                                             val lokasiUsaha = doc.getString("lokasiUsaha") ?: ""
                                             val pengantarUri = doc.getString("pengantarUri") ?: ""
@@ -197,6 +202,7 @@ class MainActivity : ComponentActivity() {
 
                                             val fallbackItem = PengajuanItem(
                                                 id = id,
+                                                userId = docUserId,
                                                 jenisSurat = jenisSurat,
                                                 namaPemohon = namaPemohon,
                                                 tanggal = tanggal,
@@ -210,6 +216,8 @@ class MainActivity : ComponentActivity() {
                                                 statusPerkawinan = statusPerkawinan,
                                                 pekerjaan = pekerjaan,
                                                 alamatLengkap = alamatLengkap,
+                                                namaPelapor = namaPelapor,
+                                                nikPelapor = nikPelapor,
                                                 namaUsaha = namaUsaha,
                                                 lokasiUsaha = lokasiUsaha,
                                                 pengantarUri = pengantarUri,
@@ -223,27 +231,30 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 // Cek apakah ada pengajuan milik warga yang baru berubah statusnya
+                                val uidLoginSekarang = auth.currentUser?.uid ?: activeUidState
                                 for (item in tempList) {
                                     val statusLama = statusSebelumnya[item.id]
                                     statusSebelumnya[item.id] = item.status
 
-                                    // Tangkap perubahan status BAIK jika ID dokumen tetap (statusLama != item.status)
-                                    // MAUPUN jika Admin membuat dokumen ID baru (statusLama == null) setelah snapshot awal
                                     val baruDiputuskan = !isFirstSnapshot &&
                                             item.status != StatusPengajuan.PROSES &&
                                             (statusLama == null || statusLama != item.status)
 
                                     if (baruDiputuskan && currentRoleUser != "admin") {
-                                        val nikSama = currentNikUser.isNotBlank() &&
-                                                item.nik.trim() == currentNikUser.trim()
+                                        val milikUserIni = if (item.userId.isNotBlank()) {
+                                            item.userId == uidLoginSekarang
+                                        } else {
+                                            val nikSama = currentNikUser.isNotBlank() &&
+                                                    (item.nik.trim() == currentNikUser.trim() ||
+                                                            item.nikPelapor.trim() == currentNikUser.trim())
+                                            val namaSama = currentNamaUser.isNotBlank() &&
+                                                    currentNamaUser != "Warga" &&
+                                                    (item.namaPemohon.trim().equals(currentNamaUser.trim(), ignoreCase = true) ||
+                                                            item.namaPelapor.trim().equals(currentNamaUser.trim(), ignoreCase = true))
+                                            nikSama || namaSama
+                                        }
 
-                                        val namaSama = currentNamaUser.isNotBlank() &&
-                                                currentNamaUser != "Warga" &&
-                                                (item.namaPemohon.trim().equals(currentNamaUser.trim(), ignoreCase = true) ||
-                                                        item.namaPemohon.trim().contains(currentNamaUser.trim(), ignoreCase = true) ||
-                                                        currentNamaUser.trim().contains(item.namaPemohon.trim(), ignoreCase = true))
-
-                                        if (nikSama || namaSama) {
+                                        if (milikUserIni) {
                                             StatusNotificationHelper.showStatusNotification(context, item)
                                         }
                                     }
@@ -256,8 +267,20 @@ class MainActivity : ComponentActivity() {
                         }
                 }
 
+                // Daftar khusus untuk warga yang sedang login (terisolasi per akun)
+                val uidAktif = auth.currentUser?.uid ?: currentUserId
+                val listPengajuanWarga = listPengajuan.filter { item ->
+                    if (item.userId.isNotBlank()) {
+                        item.userId == uidAktif
+                    } else {
+                        nikUser.isNotBlank() &&
+                                (item.nik.trim() == nikUser.trim() || item.nikPelapor.trim() == nikUser.trim())
+                    }
+                }
+
                 val fetchUserData = {
                     val userId = auth.currentUser?.uid
+                    currentUserId = userId ?: ""
                     if (userId != null) {
                         firestore.collection("users").document(userId).get()
                             .addOnSuccessListener { document ->
@@ -281,6 +304,18 @@ class MainActivity : ComponentActivity() {
                                     if (roleUser != "admin" && (isNikEmpty || isTglEmpty)) {
                                         showIncompleteProfileDialog = true
                                     }
+                                } else {
+                                    // Akun baru yang belum punya dokumen profil
+                                    namaLengkapUser = auth.currentUser?.displayName ?: "Warga"
+                                    emailUser = auth.currentUser?.email ?: ""
+                                    nikUser = ""
+                                    tempatTglLahirUser = ""
+                                    pekerjaanUser = ""
+                                    agamaUser = ""
+                                    statusUser = ""
+                                    alamatUser = ""
+                                    roleUser = "warga"
+                                    saveUserSession("warga", namaLengkapUser, "")
                                 }
                             }
                     }
@@ -567,6 +602,9 @@ class MainActivity : ComponentActivity() {
                                 onLogoutClicked = {
                                     auth.signOut()
                                     clearUserRole()
+                                    currentUserId = ""
+                                    nikUser = ""
+                                    namaLengkapUser = "Warga"
                                     currentScreen = "login"
                                     tabHistory.clear()
                                 }
@@ -584,14 +622,21 @@ class MainActivity : ComponentActivity() {
                         "admin_edit_pengajuan" -> {
                             if (selectedPengajuanItem != null) {
                                 val oldId = selectedPengajuanItem!!.id
+                                val ownerUserId = selectedPengajuanItem!!.userId
                                 AdminEditPengajuanScreen(
                                     pengajuan = selectedPengajuanItem!!,
                                     onBackClicked = { currentScreen = "admin_dashboard" },
                                     onSaveSuccess = { updatedItem ->
-                                        firestore.collection("pengajuan").document(updatedItem.id)
-                                            .set(updatedItem)
+                                        // Pastikan userId warga pemohon tetap terjaga
+                                        val finalUpdatedItem = if (updatedItem.userId.isBlank()) {
+                                            updatedItem.copy(userId = ownerUserId)
+                                        } else {
+                                            updatedItem
+                                        }
+                                        firestore.collection("pengajuan").document(finalUpdatedItem.id)
+                                            .set(finalUpdatedItem)
                                             .addOnSuccessListener {
-                                                if (oldId != updatedItem.id) {
+                                                if (oldId != finalUpdatedItem.id) {
                                                     firestore.collection("pengajuan").document(oldId).delete()
                                                 }
                                                 Toast.makeText(context, "Keputusan berhasil disimpan!", Toast.LENGTH_SHORT).show()
@@ -642,7 +687,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "status" -> {
                             StatusScreen(
-                                listPengajuan = listPengajuan,
+                                listPengajuan = listPengajuanWarga,
                                 selectedFilter = selectedStatusFilter,
                                 onFilterSelected = { newFilter ->
                                     selectedStatusFilter = newFilter
@@ -862,6 +907,9 @@ class MainActivity : ComponentActivity() {
                                 onLogoutClicked = {
                                     auth.signOut()
                                     clearUserRole()
+                                    currentUserId = ""
+                                    nikUser = ""
+                                    namaLengkapUser = "Warga"
                                     currentScreen = "login"
                                     tabHistory.clear()
                                 },
@@ -898,6 +946,9 @@ class MainActivity : ComponentActivity() {
                             onLogoutRequested = {
                                 auth.signOut()
                                 clearUserRole()
+                                currentUserId = ""
+                                nikUser = ""
+                                namaLengkapUser = "Warga"
                                 currentScreen = "login"
                                 tabHistory.clear()
                             }
@@ -920,11 +971,13 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
                                 val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
                                     ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
                                 } else ""
-                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+                                val itemPermanen = itemBaru.copy(
+                                    userId = auth.currentUser?.uid ?: currentUserId,
+                                    pengantarUri = permanentUri
+                                )
 
                                 firestore.collection("pengajuan").document(itemPermanen.id)
                                     .set(itemPermanen)
@@ -957,11 +1010,13 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
                                 val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
                                     ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
                                 } else ""
-                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+                                val itemPermanen = itemBaru.copy(
+                                    userId = auth.currentUser?.uid ?: currentUserId,
+                                    pengantarUri = permanentUri
+                                )
 
                                 firestore.collection("pengajuan").document(itemPermanen.id)
                                     .set(itemPermanen)
@@ -995,11 +1050,13 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
                                 val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
                                     ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
                                 } else ""
-                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+                                val itemPermanen = itemBaru.copy(
+                                    userId = auth.currentUser?.uid ?: currentUserId,
+                                    pengantarUri = permanentUri
+                                )
 
                                 firestore.collection("pengajuan").document(itemPermanen.id)
                                     .set(itemPermanen)
@@ -1033,11 +1090,13 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
                                 val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
                                     ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
                                 } else ""
-                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+                                val itemPermanen = itemBaru.copy(
+                                    userId = auth.currentUser?.uid ?: currentUserId,
+                                    pengantarUri = permanentUri
+                                )
 
                                 firestore.collection("pengajuan").document(itemPermanen.id)
                                     .set(itemPermanen)
@@ -1071,11 +1130,13 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = if (itemYangAkanDiedit != null) previousScreenBeforeSurat else "home"
                             },
                             onSubmitPengajuan = { itemBaru ->
-                                // Konversi URI sementara menjadi string gambar permanen agar tidak pernah hilang
                                 val permanentUri = if (itemBaru.pengantarUri.isNotBlank()) {
                                     ImageStorageHelper.uriToPermanentBase64(context, itemBaru.pengantarUri).ifBlank { itemBaru.pengantarUri }
                                 } else ""
-                                val itemPermanen = itemBaru.copy(pengantarUri = permanentUri)
+                                val itemPermanen = itemBaru.copy(
+                                    userId = auth.currentUser?.uid ?: currentUserId,
+                                    pengantarUri = permanentUri
+                                )
 
                                 firestore.collection("pengajuan").document(itemPermanen.id)
                                     .set(itemPermanen)
@@ -1186,6 +1247,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+
                     // PEMBLOKIR SENTUHAN GLOBAL: Aktif otomatis setiap kali popup/dialog muncul di halaman mana pun
                     if (isAnyDialogActive && !showIncompleteProfileDialog) {
                         Box(

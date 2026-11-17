@@ -6,6 +6,7 @@ enum class StatusPengajuan {
 
 data class PengajuanItem(
     val id: String = "",
+    val userId: String = "",
     val jenisSurat: String = "",
     val namaPemohon: String = "",
     val tanggal: String = "",
@@ -34,15 +35,15 @@ data class PengajuanItem(
     val nikPelapor: String = "",
     val alamatPelapor: String = "",
 
-    // Atribut Spesifik Surat Kehilangan (Baru ditambahkan & dipisah)
+    // Atribut Spesifik Surat Kehilangan
     val barangHilang: String = "",
     val hariKejadian: String = "",
     val tanggalKejadian: String = "",
     val jamKejadian: String = "",
 
     // Properti generik untuk kompatibilitas surat lain
-    val namaUsaha: String = "",          // Menampung Hubungan Pelapor pada Kematian / Cadangan
-    val lokasiUsaha: String = "",        // Cadangan deskripsi / SKTM
+    val namaUsaha: String = "",
+    val lokasiUsaha: String = "",
 
     val pengantarUri: String = "",
     val nomorSurat: String = "-"

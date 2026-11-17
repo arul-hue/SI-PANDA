@@ -1,5 +1,6 @@
 package com.sudes.purwodadi
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -13,39 +14,59 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
 import com.sudes.purwodadi.ui.theme.*
-
-// Catatan: data class PengajuanItem dan enum StatusPengajuan sudah ada di ModelPengajuan.kt,
-// jadi tidak dideklarasikan ulang di sini agar terhindar dari error Redeclaration.
 
 @Composable
 fun StatusScreen(
-    listPengajuan: List<PengajuanItem> = emptyList(), // Menerima list data real-time dari MainActivity
-    selectedFilter: String = "Semua",                 // 👈 Menerima state filter status dari MainActivity
-    onFilterSelected: (String) -> Unit = {},          // 👈 Callback saat pilihan filter status diubah
-    selectedSort: String = "Terbaru",                 // 👈 Menerima state urutan waktu dari MainActivity
-    onSortSelected: (String) -> Unit = {},            // 👈 Callback saat pilihan urutan waktu diubah
+    listPengajuan: List<PengajuanItem> = emptyList(),
+    selectedFilter: String = "Semua",
+    onFilterSelected: (String) -> Unit = {},
+    selectedSort: String = "Terbaru",
+    onSortSelected: (String) -> Unit = {},
     onTabSelected: (Int) -> Unit = {},
-    onDetailClicked: (PengajuanItem) -> Unit = {},    // Mengirimkan objek PengajuanItem lengkap
-    onResubmitClicked: (PengajuanItem) -> Unit = {}   // Menerima PengajuanItem secara utuh
+    onDetailClicked: (PengajuanItem) -> Unit = {},
+    onResubmitClicked: (PengajuanItem) -> Unit = {}
 ) {
-    var selectedTab by remember { mutableStateOf(1) } // Tab Status aktif di indeks 1
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("SudesPrefs", Context.MODE_PRIVATE) }
+    val roleUser = prefs.getString("USER_ROLE", "warga") ?: "warga"
+    val nikUser = prefs.getString("USER_NIK", "") ?: ""
+    val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+    var selectedTab by remember { mutableStateOf(1) }
     var searchQuery by remember { mutableStateOf("") }
 
     val scrollState = rememberScrollState()
     val sortScrollState = rememberScrollState()
     val filterScrollState = rememberScrollState()
 
-    // Menghitung jumlah untuk setiap kategori status berdasarkan data real-time
-    val totalCount = listPengajuan.size
-    val prosesCount = listPengajuan.count { it.status == StatusPengajuan.PROSES }
-    val diterimaCount = listPengajuan.count { it.status == StatusPengajuan.DITERIMA }
-    val ditolakCount = listPengajuan.count { it.status == StatusPengajuan.DITOLAK }
+    // Pisahkan data milik pengguna yang login jika bukan admin
+    val listMilikPengguna = remember(listPengajuan, roleUser, currentUid, nikUser) {
+        if (roleUser == "admin") {
+            listPengajuan
+        } else {
+            listPengajuan.filter { item ->
+                if (item.userId.isNotBlank()) {
+                    item.userId == currentUid
+                } else {
+                    nikUser.isNotBlank() &&
+                            (item.nik.trim() == nikUser.trim() || item.nikPelapor.trim() == nikUser.trim())
+                }
+            }
+        }
+    }
 
-    // Logika Filter Status & Pencarian menggunakan parameter dari MainActivity, diikuti dengan Sorting Berdasarkan Waktu
-    val filteredList = listPengajuan.filter { item ->
+    // Menghitung jumlah berdasarkan data milik pengguna tersebut
+    val totalCount = listMilikPengguna.size
+    val prosesCount = listMilikPengguna.count { it.status == StatusPengajuan.PROSES }
+    val diterimaCount = listMilikPengguna.count { it.status == StatusPengajuan.DITERIMA }
+    val ditolakCount = listMilikPengguna.count { it.status == StatusPengajuan.DITOLAK }
+
+    val filteredList = listMilikPengguna.filter { item ->
         val matchSearch = item.jenisSurat.contains(searchQuery, ignoreCase = true) ||
                 item.namaPemohon.contains(searchQuery, ignoreCase = true)
         val matchFilter = when (selectedFilter) {
@@ -56,10 +77,9 @@ fun StatusScreen(
         }
         matchSearch && matchFilter
     }.let { list ->
-        // Pengurutan berdasarkan waktu menggunakan parameter `selectedSort` dari MainActivity
         when (selectedSort) {
             "Terlama" -> list.sortedBy { it.id.toLongOrNull() ?: 0L }
-            else -> list.sortedByDescending { it.id.toLongOrNull() ?: 0L } // Default "Terbaru" ditaruh paling atas
+            else -> list.sortedByDescending { it.id.toLongOrNull() ?: 0L }
         }
     }
 
@@ -127,7 +147,6 @@ fun StatusScreen(
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
-            // HEADER ATAS HIJAU
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -152,7 +171,6 @@ fun StatusScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                // KOLOM PENCARIAN
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -173,7 +191,6 @@ fun StatusScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // FILTER BARIS 1: URUTAN WAKTU (Terbaru / Terlama)
                 Text(
                     text = "Urutkan Waktu:",
                     style = AppTypography.Caption.copy(fontWeight = FontWeight.Bold),
@@ -200,7 +217,6 @@ fun StatusScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // FILTER BARIS 2: KATEGORI STATUS (Semua, Proses, Diterima, Ditolak)
                 Text(
                     text = "Filter Status:",
                     style = AppTypography.Caption.copy(fontWeight = FontWeight.Bold),
@@ -237,7 +253,6 @@ fun StatusScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // JIKA DAFTAR KOSONG
                 if (filteredList.isEmpty()) {
                     Box(
                         modifier = Modifier
@@ -252,7 +267,6 @@ fun StatusScreen(
                         )
                     }
                 } else {
-                    // DAFTAR KARTU PENGAJUAN REAL-TIME
                     filteredList.forEach { item ->
                         PengajuanCard(
                             item = item,
@@ -295,7 +309,6 @@ fun PengajuanCard(
     onDetailClicked: () -> Unit,
     onResubmitClicked: () -> Unit
 ) {
-    // 👈 Tentukan tanggal tampil: Jika tanggalKeputusan ada isinya, gunakan itu. Jika belum, gunakan tanggal awal pengajuan.
     val displayDate = if (item.tanggalKeputusan.isNotBlank()) {
         item.tanggalKeputusan
     } else {
@@ -320,7 +333,7 @@ fun PengajuanCard(
             ) {
                 StatusBadge(status = item.status)
                 Text(
-                    text = displayDate, // 👈 Mengganti item.tanggal dengan variabel displayDate yang dinamis
+                    text = displayDate,
                     style = AppTypography.Caption,
                     color = TextSecondary
                 )
@@ -342,12 +355,12 @@ fun PengajuanCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val containerColor = when(item.status) {
+            val containerColor = when (item.status) {
                 StatusPengajuan.PROSES -> OrangeProcessContainer
                 StatusPengajuan.DITERIMA -> GreenDesaLight
                 StatusPengajuan.DITOLAK -> RedRejectedContainer
             }
-            val textColor = when(item.status) {
+            val textColor = when (item.status) {
                 StatusPengajuan.PROSES -> OrangeProcessText
                 StatusPengajuan.DITERIMA -> GreenDesaPrimary
                 StatusPengajuan.DITOLAK -> RedRejectedText
@@ -418,7 +431,7 @@ fun PengajuanCard(
 
 @Composable
 fun StatusBadge(status: StatusPengajuan) {
-    val (bgColor, textColor, text) = when(status) {
+    val (bgColor, textColor, text) = when (status) {
         StatusPengajuan.PROSES -> Triple(OrangeProcessContainer, OrangeProcessText, "• Diproses")
         StatusPengajuan.DITERIMA -> Triple(GreenDesaLight, GreenDesaPrimary, "✓ Diterima")
         StatusPengajuan.DITOLAK -> Triple(RedRejectedContainer, RedRejectedText, "✕ Ditolak")
