@@ -241,6 +241,7 @@ fun AdminEditPengajuanScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding() // agar layar otomatis terangkat mengikuti tinggi keyboard
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {

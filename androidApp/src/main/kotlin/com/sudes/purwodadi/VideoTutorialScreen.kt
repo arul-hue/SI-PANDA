@@ -30,7 +30,7 @@ data class VideoTutorialItem(
     val title: String,
     val description: String,
     val duration: String,
-    val videoUrl: String // 💡 Ditambahkan link video untuk masing-masing item
+    val videoUrl: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,7 +38,6 @@ data class VideoTutorialItem(
 fun VideoTutorialScreen(
     onBackClicked: () -> Unit = {}
 ) {
-    // State untuk melacak video mana yang sedang dipilih/diputar (null jika sedang di halaman daftar)
     var selectedVideo by remember { mutableStateOf<VideoTutorialItem?>(null) }
 
     val videoList = listOf(
@@ -70,10 +69,8 @@ fun VideoTutorialScreen(
 
     BackHandler {
         if (selectedVideo != null) {
-            // Jika sedang memutar video, kembali ke daftar video
             selectedVideo = null
         } else {
-            // Jika di halaman daftar, kembali ke halaman sebelumnya (profil/beranda)
             onBackClicked()
         }
     }
@@ -87,12 +84,13 @@ fun VideoTutorialScreen(
         return
     }
 
+    // HALAMAN DAFTAR MENU VIDEO TUTORIAL
     Scaffold(
         topBar = {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .statusBarsPadding(), // <--- TAMBAHKAN BARIS INI
+                    .statusBarsPadding(),
                 color = GreenDesaPrimary,
                 shadowElevation = 4.dp
             ) {
@@ -103,10 +101,7 @@ fun VideoTutorialScreen(
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = {
-                        exoPlayer.release()
-                        onBackClicked()
-                    }) {
+                    IconButton(onClick = onBackClicked) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -115,7 +110,7 @@ fun VideoTutorialScreen(
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Putar Video Tutorial",
+                        text = "Video Tutorial SuDes",
                         style = AppTypography.HeadingMedium.copy(color = Color.White)
                     )
                 }
@@ -140,7 +135,7 @@ fun VideoTutorialScreen(
             videoList.forEach { video ->
                 VideoCardItem(
                     video = video,
-                    onClick = { selectedVideo = video } // 💡 Saat diklik, buka pemutar video
+                    onClick = { selectedVideo = video }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -154,7 +149,7 @@ fun VideoCardItem(video: VideoTutorialItem, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick), // 💡 Membuat card bisa diklik
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -218,7 +213,7 @@ fun VideoCardItem(video: VideoTutorialItem, onClick: () -> Unit) {
     }
 }
 
-// 💡 KOMPONEN PEMUTAR VIDEO DENGAN MEDIA3 EXOPLAYER (BAR SKIP, PLAY/PAUSE, DLL)
+// KOMPONEN PEMUTAR VIDEO DENGAN MEDIA3 EXOPLAYER
 @Composable
 fun VideoPlayerDetailScreen(
     video: VideoTutorialItem,
@@ -231,7 +226,7 @@ fun VideoPlayerDetailScreen(
             val mediaItem = MediaItem.fromUri(Uri.parse(video.videoUrl))
             setMediaItem(mediaItem)
             prepare()
-            playWhenReady = true // Langsung putar saat dibuka
+            playWhenReady = true
         }
     }
 
@@ -244,7 +239,9 @@ fun VideoPlayerDetailScreen(
     Scaffold(
         topBar = {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding(),
                 color = GreenDesaPrimary,
                 shadowElevation = 4.dp
             ) {
@@ -282,7 +279,6 @@ fun VideoPlayerDetailScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Kotak Layar Pemutar Video
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -295,7 +291,7 @@ fun VideoPlayerDetailScreen(
                     factory = { ctx ->
                         PlayerView(ctx).apply {
                             player = exoPlayer
-                            useController = true // Menampilkan bar skip, play/pause, durasi
+                            useController = true
                         }
                     },
                     modifier = Modifier.fillMaxSize()
@@ -304,7 +300,6 @@ fun VideoPlayerDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Informasi Detail Video yang Dipilih
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),

@@ -1117,6 +1117,7 @@ class MainActivity : ComponentActivity() {
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .imePadding()
                                     .padding(horizontal = 24.dp),
                                 shape = RoundedCornerShape(20.dp),
                                 color = Color.White,
