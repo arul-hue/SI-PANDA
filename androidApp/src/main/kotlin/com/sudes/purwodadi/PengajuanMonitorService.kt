@@ -80,7 +80,7 @@ class PengajuanMonitorService : Service() {
 
         val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
             .setSmallIcon(R.drawable.logo_desa)
-            .setContentTitle("SUDES Purwodadi Simpang")
+            .setContentTitle("SI PANDA Purwodadi Simpang")
             .setContentText(teksService)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)

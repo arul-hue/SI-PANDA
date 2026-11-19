@@ -132,8 +132,16 @@ fun LoginScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Layanan Surat Online Desa",
-                                style = AppTypography.Caption.copy(color = Color.White.copy(alpha = 0.9f))
+                                text = "Sistem Pelayanan Administrasi Desa",
+                                style = AppTypography.LabelForm.copy(color = Color.White)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Desa Digital, Pelayanan Optimal.",
+                                style = AppTypography.Caption.copy(
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                )
                             )
                         }
                     }

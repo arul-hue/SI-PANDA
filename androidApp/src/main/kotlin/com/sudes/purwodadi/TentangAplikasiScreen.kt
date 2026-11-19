@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sudes.purwodadi.ui.theme.*
@@ -72,7 +73,7 @@ fun TentangAplikasiScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Logo SuDes dari R.drawable.logo_sudes
+            // Logo SI PANDA dari R.drawable.logo_sudes
             Box(
                 modifier = Modifier
                     .size(80.dp)
@@ -96,12 +97,20 @@ fun TentangAplikasiScreen(
                 color = TextPrimary
             )
             Text(
+                text = "Sistem Pelayanan Administrasi Desa",
+                style = AppTypography.BodyRegular.copy(fontWeight = FontWeight.Medium),
+                color = TextSecondary,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
                 text = "Desa Digital, Pelayanan Optimal.",
-                style = AppTypography.BodyRegular,
-                color = GreenDesaPrimary
+                style = AppTypography.Caption,
+                color = GreenDesaPrimary,
+                textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Tag Versi
             Surface(
@@ -117,7 +126,7 @@ fun TentangAplikasiScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Card 1: Apa itu SuDes?
+            // Card 1: Apa itu SI PANDA?
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -184,7 +193,7 @@ fun TentangAplikasiScreen(
                 }
             }
 
-            // 💡 Spacer fleksibel untuk mendorong footer copyright menempel rapi di bagian bawah layar
+            // Spacer fleksibel untuk mendorong footer copyright menempel rapi di bagian bawah layar
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.height(32.dp))
 
