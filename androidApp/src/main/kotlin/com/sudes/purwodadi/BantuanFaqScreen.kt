@@ -37,7 +37,7 @@ fun BantuanFaqScreen(
 ) {
     val faqList = listOf(
         FaqItem(
-            question = "Bagaimana cara mengajukan surat online di SuDes?",
+            question = "Bagaimana cara mengajukan surat online di SI PANDA?",
             answer = "Warga dapat masuk ke menu Layanan Surat, pilih jenis surat yang diinginkan, lengkapi formulir data diri yang tersedia, lalu klik tombol kirim. Anda dapat memantau status pengajuan langsung melalui halaman Status Surat."
         ),
         FaqItem(

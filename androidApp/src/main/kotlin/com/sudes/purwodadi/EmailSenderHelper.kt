@@ -97,7 +97,7 @@ object EmailSenderHelper {
                 })
 
                 val message = MimeMessage(session).apply {
-                    setFrom(InternetAddress(config.senderEmail, "Admin SuDes"))
+                    setFrom(InternetAddress(config.senderEmail, "Admin SI PANDA"))
                     setRecipients(Message.RecipientType.TO, InternetAddress.parse(config.targetEmail))
                     subject = "Dokumen Resmi Desa (PDF): ${pengajuan.jenisSurat} - ${pengajuan.namaPemohon}"
 

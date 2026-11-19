@@ -120,14 +120,14 @@ fun LoginScreen(
                                 Box(contentAlignment = Alignment.Center) {
                                     Image(
                                         painter = painterResource(id = R.drawable.logo_sudes),
-                                        contentDescription = "Logo SuDes",
+                                        contentDescription = "Logo SI PANDA",
                                         modifier = Modifier.size(140.dp)
                                     )
                                 }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "SuDes",
+                                text = "SI PANDA",
                                 style = AppTypography.HeadingLarge.copy(color = Color.White)
                             )
                             Spacer(modifier = Modifier.height(4.dp))

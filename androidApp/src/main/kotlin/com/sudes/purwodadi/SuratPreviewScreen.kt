@@ -217,7 +217,7 @@ private fun exportPdfDanKirimGmail(
 
             val emailIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/pdf"
-                putExtra(Intent.EXTRA_EMAIL, arrayOf("jundilamtara0103@gmail.com"))
+                putExtra(Intent.EXTRA_EMAIL, arrayOf("p.simpangtabin@gmail.com"))
                 putExtra(Intent.EXTRA_SUBJECT, "Dokumen Resmi Desa: ${item.jenisSurat} - ${item.namaPemohon}")
                 putExtra(
                     Intent.EXTRA_TEXT,
@@ -227,7 +227,7 @@ private fun exportPdfDanKirimGmail(
                     Berikut terlampir dokumen resmi ${item.jenisSurat}
                     atas nama ${item.namaPemohon} (NIK: ${item.nik})
                     dengan Nomor Surat: ${item.nomorSurat}
-                    yang telah diterbitkan melalui aplikasi SUDES.
+                    yang telah diterbitkan melalui aplikasi SI PANDA.
 
                     Terima kasih.
                     """.trimIndent()

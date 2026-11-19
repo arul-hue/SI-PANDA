@@ -110,7 +110,7 @@ fun VideoTutorialScreen(
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Video Tutorial SuDes",
+                        text = "Video Tutorial SI PANDA",
                         style = AppTypography.HeadingMedium.copy(color = Color.White)
                     )
                 }

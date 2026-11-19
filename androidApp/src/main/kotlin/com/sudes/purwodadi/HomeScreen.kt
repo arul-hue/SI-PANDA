@@ -151,7 +151,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Layanan Surat Online Desa",
+                            text = "Sistem Pelayanan Administrasi Desa",
                             style = AppTypography.HeadingMedium.copy(color = Color.White)
                         )
                         Spacer(modifier = Modifier.height(4.dp))

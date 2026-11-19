@@ -1125,7 +1125,7 @@ fun AdminEditPengajuanScreen(
             text = {
                 Text(
                     text = if (isDiterima)
-                        "Status akan disimpan sebagai TERBIT dan surat resmi akan otomatis dikirim ke email admin (jundilamtara0103@gmail.com)."
+                        "Status akan disimpan sebagai TERBIT dan surat resmi akan otomatis dikirim ke email admin (p.simpangtabin@gmail.com)."
                     else
                         "Alasan penolakan akan dikirimkan ke warga.",
                     style = AppTypography.BodyRegular,

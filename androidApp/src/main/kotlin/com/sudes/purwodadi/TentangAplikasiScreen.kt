@@ -54,7 +54,7 @@ fun TentangAplikasiScreen(
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Tentang Aplikasi SuDes",
+                        text = "Tentang Aplikasi SI PANDA",
                         style = AppTypography.HeadingMedium.copy(color = Color.White)
                     )
                 }
@@ -82,7 +82,7 @@ fun TentangAplikasiScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logo_sudes),
-                    contentDescription = "Logo SuDes",
+                    contentDescription = "Logo SI PANDA",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -91,12 +91,12 @@ fun TentangAplikasiScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "SuDes",
+                text = "SI PANDA",
                 style = AppTypography.HeadingLarge,
                 color = TextPrimary
             )
             Text(
-                text = "Layanan Surat Online Desa",
+                text = "Desa Digital, Pelayanan Optimal.",
                 style = AppTypography.BodyRegular,
                 color = GreenDesaPrimary
             )
@@ -126,13 +126,13 @@ fun TentangAplikasiScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Apa itu SuDes?",
+                        text = "Apa itu SI PANDA?",
                         style = AppTypography.HeadingMedium,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "SuDes (Surat Desa) adalah platform pelayanan publik digital untuk mempermudah warga Desa Purwodadi Simpang dalam membuat pengajuan surat kependudukan secara cepat, mandiri, dan efisien tanpa perlu antre lama di balai desa.",
+                        text = "SI PANDA (Sistem Pelayanan Administrasi Desa) adalah platform pelayanan publik digital untuk mempermudah warga Desa Purwodadi Simpang dalam membuat pengajuan surat kependudukan secara cepat, mandiri, dan efisien tanpa perlu antre lama di balai desa.",
                         style = AppTypography.BodyRegular,
                         color = TextSecondary
                     )
@@ -177,7 +177,7 @@ fun TentangAplikasiScreen(
                         color = TextSecondary
                     )
                     Text(
-                        text = "Senin - Jumat | 08.00 - 15.30 WIB",
+                        text = "Senin - Jumat | 08.00 - 15.00 WIB",
                         style = AppTypography.BodyRegular,
                         color = TextPrimary
                     )
