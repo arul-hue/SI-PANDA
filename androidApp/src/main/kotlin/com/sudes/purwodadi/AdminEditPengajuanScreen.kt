@@ -210,7 +210,14 @@ fun AdminEditPengajuanScreen(
             lokasiUsaha = finalLokasiUsaha,
             nomorSurat = nomorSurat.ifBlank { "-" },
             status = if (isDiterima) StatusPengajuan.DITERIMA else StatusPengajuan.DITOLAK,
-            pesanStatus = if (isDiterima) "Surat telah diterbitkan oleh perangkat desa. Silakan ambil di balai desa." else alasanDitolak,
+            pesanStatus = if (isDiterima) {
+                "Surat telah diterbitkan oleh perangkat desa. Silakan ambil di balai desa dengan membawa 3 berkas berikut:\n" +
+                        "1. Surat pengantar RT asli\n" +
+                        "2. Fotokopi KK\n" +
+                        "3. Fotokopi KTP"
+            } else {
+                alasanDitolak
+            },
             tanggalKeputusan = waktuKeputusan,
             pengantarUri = pengajuan.pengantarUri
         )
