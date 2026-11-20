@@ -954,7 +954,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                         "ganti_password" -> GantiPasswordScreen(onBackClicked = { currentScreen = "profile" }, onSaveSuccess = { currentScreen = "profile" })
-                        "video_tutorial" -> VideoTutorialScreen(onBackClicked = { currentScreen = "profile" })
+                        // "video_tutorial" -> VideoTutorialScreen(onBackClicked = { currentScreen = "profile" })
                         "bantuan_faq" -> BantuanFaqScreen(onBackClicked = { currentScreen = "profile" })
                         "tentang_aplikasi" -> TentangAplikasiScreen(onBackClicked = { currentScreen = "profile" })
 

@@ -357,7 +357,7 @@ fun SuratDomisiliScreen(
                     label = "Alamat Tempat Tinggal Saat Ini",
                     value = alamatDomisiliSekarang,
                     onValueChange = { alamatDomisiliSekarang = it },
-                    placeholder = "Masukkan alamat domisili sekarang",
+                    placeholder = "Masukkan alamat lengkap domisili sekarang",
                     singleLine = false,
                     minLines = 3,
                     maxLines = 4,

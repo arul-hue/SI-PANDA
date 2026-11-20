@@ -450,7 +450,7 @@ fun SuratUsahaScreen(
                     label = "Lokasi Usaha",
                     value = lokasiUsaha,
                     onValueChange = { lokasiUsaha = it },
-                    placeholder = "Masukkan lokasi/alamat tempat usaha",
+                    placeholder = "Masukkan lokasi/alamat lengkap tempat usaha",
                     singleLine = false,
                     minLines = 2,
                     maxLines = 3,

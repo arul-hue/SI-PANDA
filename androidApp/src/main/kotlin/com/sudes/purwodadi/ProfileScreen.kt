@@ -251,7 +251,7 @@ fun ProfileScreen(
                         HorizontalDivider(color = BorderColor, thickness = 1.dp)
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        ProfileMenuItem(title = "Video Tutorial SI PANDA", onClick = onVideoTutorialClicked)
+                        // ProfileMenuItem(title = "Video Tutorial SI PANDA", onClick = onVideoTutorialClicked)
                         ProfileMenuItem(title = "Bantuan & Pertanyaan Umum", onClick = onBantuanFaqClicked)
                         ProfileMenuItem(title = "Tentang Aplikasi SI PANDA", onClick = onTentangAplikasiClicked)
                     }

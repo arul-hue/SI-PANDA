@@ -42,7 +42,7 @@ fun BantuanFaqScreen(
         ),
         FaqItem(
             question = "Bagaimana cara mengganti email atau kata sandi akun?",
-            answer = "Buka menu Profil, lalu pilih 'Kelola Email' atau 'Ganti Kata Sandi'. Khusus untuk akun manual (Email & Password), Anda dapat memperbarui data dengan aman melalui menu pengaturan tersebut."
+            answer = "Buka menu Profil, lalu pilih 'Ganti Email Akun' atau 'Ganti Kata Sandi'. Khusus untuk akun manual (Email & Password), Anda dapat memperbarui data dengan aman melalui menu pengaturan tersebut."
         ),
         FaqItem(
             question = "Bagaimana jika email baru saya belum berubah setelah diverifikasi?",
@@ -50,7 +50,7 @@ fun BantuanFaqScreen(
         ),
         FaqItem(
             question = "Bagaimana cara mengambil surat yang sudah disetujui?",
-            answer = "Jika pengajuan surat Anda telah berstatus 'Disetujui' oleh pihak desa, warga dapat langsung datang ke Balai Desa Purwodadi Simpang dengan menunjukkan bukti digital di aplikasi."
+            answer = "Jika pengajuan surat Anda telah berstatus 'Disetujui' oleh pihak desa, warga dapat langsung datang ke Balai Desa Purwodadi Simpang dengan menunjukkan bukti digital di aplikasi serta membawa 3 berkas fisik berikut:\n1. Surat Pengantar RT asli\n2. Fotokopi Kartu Keluarga (KK)\n3. Fotokopi KTP"
         ),
         FaqItem(
             question = "Apa yang harus dilakukan jika pengajuan surat ditolak?",

@@ -68,9 +68,9 @@ object SuratHtmlGenerator {
 
     private fun getKopSuratHtml(logoBase64: String): String {
         val logoHtml = if (logoBase64.isNotBlank()) {
-            """<img src="$logoBase64" alt="Logo Desa" style="display: block; width: 72px; height: 78px; object-fit: contain;" />"""
+            """<img src="$logoBase64" alt="Logo Desa" style="display: block; width: 64px; height: 86px; object-fit: contain;" />"""
         } else {
-            """<div style="width: 72px; height: 78px;"></div>"""
+            """<div style="width: 64px; height: 86px;"></div>"""
         }
 
         return """
@@ -300,8 +300,7 @@ object SuratHtmlGenerator {
             </div>
 
             <p style="text-align: justify; text-indent: 36px; margin: 8px 0; font-size: 12pt; line-height: 1.35;">
-                Yang berlokasi di <b>${display(item.lokasiUsaha)}</b> Desa Purwodadi Simpang Kecamatan
-                Tanjung Bintang Kabupaten Lampung Selatan.
+                Yang berlokasi di <b>${display(item.lokasiUsaha)}</b>.
             </p>
 
             <p style="text-align: justify; text-indent: 36px; margin: 8px 0; font-size: 12pt; line-height: 1.35;">
@@ -342,8 +341,7 @@ object SuratHtmlGenerator {
             ${dataTable(pemohonRows)}
 
             <p style="text-align: justify; text-indent: 36px; margin: 10px 0; font-size: 12pt; line-height: 1.35;">
-                Bahwa nama tersebut benar Berdomisili di <b>${display(item.lokasiUsaha)}</b> Desa Purwodadi
-                Simpang Kecamatan Tanjung Bintang Kabupaten Lampung Selatan.
+                Bahwa nama tersebut benar Berdomisili di <b>${display(item.lokasiUsaha)}</b>.
             </p>
 
             <p style="text-align: justify; text-indent: 36px; margin: 10px 0; font-size: 12pt; line-height: 1.35;">
