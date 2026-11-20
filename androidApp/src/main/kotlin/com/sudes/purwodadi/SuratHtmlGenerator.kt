@@ -136,9 +136,11 @@ object SuratHtmlGenerator {
         return """
             <div style="width: 46%; margin: $topMargin 0 0 auto; font-size: $fontSize; line-height: 1.25; text-align: left; page-break-inside: avoid;">
                 $headerTtd
-                <div style="text-align: left; padding-top: 2px;">Kepala Desa Purwodadi Simpang</div>
-                <div style="height: $signHeight;">&nbsp;</div>
-                <div style="text-align: left; font-weight: bold; letter-spacing: 0.8px; padding-left: 4px;">L A M I D I, S.E</div>
+                <div style="display: inline-block; text-align: left;">
+                    <div style="padding-top: 2px; white-space: nowrap;">Kepala Desa Purwodadi Simpang</div>
+                    <div style="height: $signHeight;">&nbsp;</div>
+                    <div style="text-align: center; font-weight: bold;"><u>L A M I D I, S.E</u></div>
+                </div>
             </div>
         """.trimIndent()
     }
