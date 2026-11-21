@@ -85,5 +85,6 @@
 ### Langkah Menjalankan Proyek
 1. **Clone repositori ini:**
    ```bash
-   git clone [https://github.com/arul-hue/SI-PANDA.git](https://github.com/arul-hue/SI-PANDA.git)
+   git clone https://github.com/arul-hue/SI-PANDA.git
    cd SI-PANDA
+   ```
