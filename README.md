@@ -26,9 +26,9 @@
 - **Pengajuan 5 Jenis Surat Administrasi:**
   1. Surat Keterangan Usaha (SKU)
   2. Surat Keterangan Domisili
-  3. Surat Keterangan Tidak Mampu (SKTM)
-  4. Surat Keterangan Kehilangan
-  5. Surat Keterangan Kematian
+  3. Surat Keterangan Kehilangan
+  4. Surat Keterangan Kematian
+  5. Surat Keterangan Tidak Mampu (SKTM)
 - **Unggah Lampiran:** Mendukung pengambilan foto atau pemilihan berkas surat pengantar RT langsung dari perangkat.
 - **Pelacakan Status Real-Time & Notifikasi:** Memantau progres pengajuan (`Diproses`, `Diterima`, atau `Ditolak`), menerima notifikasi saat status berubah, serta melihat catatan alasan dan mengajukan ulang apabila berkas ditolak.
 - **Manajemen Profil Terpadu:** Pengisian otomatis (*auto-fill*) data kependudukan (NIK, TTL, alamat, pekerjaan, agama, status perkawinan) pada setiap formulir pengajuan.
