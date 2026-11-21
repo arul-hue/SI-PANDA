@@ -46,7 +46,7 @@
 ### 1. Portal Warga
 | 1. Halaman Masuk | 2. Beranda Layanan Surat | 3. Formulir Pengajuan | 4. Status Pengajuan |
 | :---: | :---: | :---: | :---: |
-| <img width="720" height="1600" alt="Tampilan_All_Login" src="https://github.com/user-attachments/assets/d6e7ff45-4ae5-4a18-98be-481f5aaa65f6" />
+| <img width="190" alt="Tampilan_All_Login" src="https://github.com/user-attachments/assets/d6e7ff45-4ae5-4a18-98be-481f5aaa65f6" />
  | <img src="LINK_Tampilan_User_Beranda" width="190" /> | <img src="LINK_Tampilan_User_Pengajuan_Surat" width="190" /> | <img src="LINK_Tampilan_User_Status" width="190" /> |
 
 ### 2. Profil Warga & Dashboard Admin Desa
