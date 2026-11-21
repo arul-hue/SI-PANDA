@@ -68,7 +68,7 @@
 
 ## Unduh & Instalasi (Pengguna)
 
-1. Buka halaman [**Releases**](https://github.com/arul-hue/SuDes/releases) pada repositori ini.
+1. Buka halaman [**Releases**](https://github.com/arul-hue/SI-PANDA/releases) pada repositori ini.
 2. Unduh file `.apk` terbaru yang tersedia pada bagian **Assets**.
 3. Buka file APK yang telah diunduh di perangkat Android Anda, lalu izinkan opsi **Instal dari sumber tidak dikenal** (*Install unknown apps*) jika diminta oleh sistem.
 4. Jalankan aplikasi **SI PANDA**, lakukan pendaftaran akun baru atau masuk menggunakan akun Google, dan lengkapi data diri pada menu **Profil**.
@@ -85,5 +85,5 @@
 ### Langkah Menjalankan Proyek
 1. **Clone repositori ini:**
    ```bash
-   git clone [https://github.com/arul-hue/SuDes.git](https://github.com/arul-hue/SuDes.git)
+   git clone [https://github.com/arul-hue/SI-PANDA.git](https://github.com/arul-hue/SI-PANDA.git)
    cd SI-PANDA
