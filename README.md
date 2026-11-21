@@ -86,4 +86,4 @@
 1. **Clone repositori ini:**
    ```bash
    git clone [https://github.com/arul-hue/SuDes.git](https://github.com/arul-hue/SuDes.git)
-   cd SuDes
+   cd SI-PANDA
