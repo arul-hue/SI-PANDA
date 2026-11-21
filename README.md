@@ -46,23 +46,16 @@
 ### 1. Portal Warga
 | 1. Halaman Masuk | 2. Beranda Layanan Surat | 3. Formulir Pengajuan | 4. Status Pengajuan |
 | :---: | :---: | :---: | :---: |
-| <img width="190" alt="Tampilan_All_Login" src="https://github.com/user-attachments/assets/d6e7ff45-4ae5-4a18-98be-481f5aaa65f6" />
-| <img width="190" alt="Tampilan_User_Beranda" src="https://github.com/user-attachments/assets/ce08646c-4219-4d15-a49b-caecbf666ca7" />
-| <img width="190" alt="Tampilan_User_Status" src="https://github.com/user-attachments/assets/c92a84d4-4055-4d39-8a45-d774396c0165" />
-| <img width="190" alt="Tampilan_User_Profil" src="https://github.com/user-attachments/assets/3bc40969-8fed-46d5-b1b5-912f4a4931ca" />
-|
+| <img width="190" alt="Tampilan_All_Login" src="[https://github.com/user-attachments/assets/d6e7ff45-4ae5-4a18-98be-481f5aaa65f6](https://github.com/user-attachments/assets/d6e7ff45-4ae5-4a18-98be-481f5aaa65f6)" /> | <img width="190" alt="Tampilan_User_Beranda" src="[https://github.com/user-attachments/assets/ce08646c-4219-4d15-a49b-caecbf666ca7](https://github.com/user-attachments/assets/ce08646c-4219-4d15-a49b-caecbf666ca7)" /> | <img width="190" alt="Tampilan_User_Pengajuan_Surat" src="[https://github.com/user-attachments/assets/e17f37d9-0ef2-40f6-a699-500591162138](https://github.com/user-attachments/assets/e17f37d9-0ef2-40f6-a699-500591162138)" /> | <img width="190" alt="Tampilan_User_Status" src="[https://github.com/user-attachments/assets/c92a84d4-4055-4d39-8a45-d774396c0165](https://github.com/user-attachments/assets/c92a84d4-4055-4d39-8a45-d774396c0165)" /> |
 
 ### 2. Profil Warga & Dashboard Admin Desa
 | 5. Profil & Bantuan Warga | 6. Dashboard Pelayanan Admin | 7. Verifikasi & Keputusan Admin |
 | :---: | :---: | :---: |
-| <img width="190" alt="Tampilan_User_Pengajuan_Surat" src="https://github.com/user-attachments/assets/e17f37d9-0ef2-40f6-a699-500591162138" />
-| <img width="190" alt="Tampilan_Admin_Daftar_Pengajuan_Surat" src="https://github.com/user-attachments/assets/9c715868-2984-4f6c-b74c-ea09460cc6ca" />
-| <img width="190" alt="Tampilan_Admin_Menolak_Surat" src="https://github.com/user-attachments/assets/b161db89-59f9-4c6f-a3f3-6022dec3d575" />
-| 
+| <img width="210" alt="Tampilan_User_Profil" src="[https://github.com/user-attachments/assets/3bc40969-8fed-46d5-b1b5-912f4a4931ca](https://github.com/user-attachments/assets/3bc40969-8fed-46d5-b1b5-912f4a4931ca)" /> | <img width="210" alt="Tampilan_Admin_Daftar_Pengajuan_Surat" src="[https://github.com/user-attachments/assets/9c715868-2984-4f6c-b74c-ea09460cc6ca](https://github.com/user-attachments/assets/9c715868-2984-4f6c-b74c-ea09460cc6ca)" /> | <img width="210" alt="Tampilan_Admin_Menolak_Surat" src="[https://github.com/user-attachments/assets/b161db89-59f9-4c6f-a3f3-6022dec3d575](https://github.com/user-attachments/assets/b161db89-59f9-4c6f-a3f3-6022dec3d575)" /> |
 
 ### 3. Pengiriman Otomatis Dokumen Surat PDF ke Email Desa
 <p align="center">
-  <img src="LINK_Foto_Kirim_Gmail" width="760" alt="Bukti Pengiriman Otomatis Surat PDF ke Gmail" />
+  <img width="760" alt="Bukti Pengiriman Otomatis Surat PDF ke Gmail" src="LINK_Foto_Kirim_Gmail" />
 </p>
 
 ---
