@@ -51,8 +51,7 @@
 ### 2. Dashboard Admin Desa
 | 1. Dashboard Pelayanan | 2. Verifikasi & Keputusan | 3. Pengiriman Otomatis PDF ke Email |
 | :---: | :---: | :---: |
-| <img width="180" alt="Tampilan_Admin_Daftar_Pengajuan_Surat" src="https://github.com/user-attachments/assets/9c715868-2984-4f6c-b74c-ea09460cc6ca" /> | <img width="180" alt="Tampilan_Admin_Menolak_Surat" src="https://github.com/user-attachments/assets/b161db89-59f9-4c6f-a3f3-6022dec3d575" /> | <img width="420" alt="Foto_Kirim_Gmail" src="https://github.com/user-attachments/assets/3a508046-cf33-4878-9034-3c0f269b8a12" />
- |
+| <img width="180" alt="Tampilan_Admin_Daftar_Pengajuan_Surat" src="https://github.com/user-attachments/assets/9c715868-2984-4f6c-b74c-ea09460cc6ca" /> | <img width="180" alt="Tampilan_Admin_Menolak_Surat" src="https://github.com/user-attachments/assets/b161db89-59f9-4c6f-a3f3-6022dec3d575" /> | <img width="420" alt="Foto_Kirim_Gmail" src="https://github.com/user-attachments/assets/3a508046-cf33-4878-9034-3c0f269b8a12" /> |
 
 ---
 
