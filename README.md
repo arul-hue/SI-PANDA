@@ -26,18 +26,37 @@
 - **Pengajuan 5 Jenis Surat Administrasi:**
   1. Surat Keterangan Usaha (SKU)
   2. Surat Keterangan Domisili
-  3. Surat Keterangan Kehilangan
-  4. Surat Keterangan Kematian
-  5. Surat Keterangan Tidak Mampu (SKTM)
+  3. Surat Keterangan Tidak Mampu (SKTM)
+  4. Surat Keterangan Kehilangan
+  5. Surat Keterangan Kematian
 - **Unggah Lampiran:** Mendukung pengambilan foto atau pemilihan berkas surat pengantar RT langsung dari perangkat.
 - **Pelacakan Status Real-Time & Notifikasi:** Memantau progres pengajuan (`Diproses`, `Diterima`, atau `Ditolak`), menerima notifikasi saat status berubah, serta melihat catatan alasan dan mengajukan ulang apabila berkas ditolak.
 - **Manajemen Profil Terpadu:** Pengisian otomatis (*auto-fill*) data kependudukan (NIK, TTL, alamat, pekerjaan, agama, status perkawinan) pada setiap formulir pengajuan.
-- **Bantuan & FAQ:** Panduan lengkap alur pengajuan dan daftar 3 berkas fisik yang wajib dibawa saat pengambilan surat di Balai Desa Purwodadi Simpang.
+- **Bantuan & Panduan:** Dilengkapi halaman Bantuan & Pertanyaan Umum (FAQ) mengenai alur pengajuan dan syarat 3 berkas fisik pengambilan surat di Balai Desa Purwodadi Simpang.
 
 ### 2. Dashboard Admin Desa
-- **Manajemen Antrean Pengajuan:** Melihat seluruh daftar permohonan warga lengkap dengan pencarian nama/jenis surat, filter status, dan pengurutan waktu.
-- **Verifikasi Detail & Lampiran:** Memeriksa kelengkapan data diri pemohon serta pratinjau foto surat pengantar RT.
+- **Manajemen Antrean Pengajuan:** Melihat seluruh daftar permohonan warga lengkap dengan pencarian nama/jenis surat, filter status (`Semua`, `Proses`, `Diterima`, `Ditolak`), dan pengurutan waktu.
+- **Verifikasi Detail & Lampiran:** Memeriksa serta mengoreksi kelengkapan data diri pemohon dan memeriksa lampiran foto surat pengantar RT.
 - **Keputusan, Pratinjau Cetak & Kirim PDF Otomatis:** Menerima atau menolak pengajuan dengan alasan yang jelas, memasukkan nomor surat resmi, menghasilkan pratinjau/cetak dokumen surat standar A4, serta mengirim otomatis file surat PDF ke email desa.
+
+---
+
+## Tampilan Aplikasi (Screenshot)
+
+### 1. Portal Warga
+| 1. Halaman Masuk | 2. Beranda Layanan Surat | 3. Formulir Pengajuan | 4. Status Pengajuan |
+| :---: | :---: | :---: | :---: |
+| <img src="LINK_Tampilan_All_Login" width="190" /> | <img src="LINK_Tampilan_User_Beranda" width="190" /> | <img src="LINK_Tampilan_User_Pengajuan_Surat" width="190" /> | <img src="LINK_Tampilan_User_Status" width="190" /> |
+
+### 2. Profil Warga & Dashboard Admin Desa
+| 5. Profil & Bantuan Warga | 6. Dashboard Pelayanan Admin | 7. Verifikasi & Keputusan Admin |
+| :---: | :---: | :---: |
+| <img src="LINK_Tampilan_User_Profil" width="210" /> | <img src="LINK_Tampilan_Admin_Daftar_Pengajuan_Surat" width="210" /> | <img src="LINK_Tampilan_Admin_Menolak_Surat" width="210" /> |
+
+### 3. Pengiriman Otomatis Dokumen Surat PDF ke Email Desa
+<p align="center">
+  <img src="LINK_Foto_Kirim_Gmail" width="760" alt="Bukti Pengiriman Otomatis Surat PDF ke Gmail" />
+</p>
 
 ---
 
