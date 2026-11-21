@@ -1,9 +1,9 @@
-# SuDes (Surat Desa) — Aplikasi Pelayanan Surat Administrasi Desa Purwodadi Simpang
+# SI PANDA (Sistem Pelayanan Administrasi Desa) — Aplikasi Pelayanan Surat Desa Purwodadi Simpang
 
 **Topik Proyek:** *Implementasi Sistem Pelayanan Persuratan Desa Berbasis Mobile dalam Mendukung Efisiensi Proses Administrasi di Desa Purwodadi Simpang*  
-**Lokasi Mitra:** Desa Purwodadi Simpang
+**Lokasi Mitra:** Desa Purwodadi Simpang, Kecamatan Tanjung Bintang, Kabupaten Lampung Selatan
 
-**SuDes (Surat Desa)** adalah aplikasi mobile berbasis Android (Kotlin Multiplatform / Jetpack Compose) yang dirancang untuk mempermudah warga Desa Purwodadi Simpang dalam mengajukan berbagai surat keterangan administrasi secara daring (*online*) serta memantau status verifikasinya secara *real-time* langsung dari ponsel.
+**SI PANDA (Sistem Pelayanan Administrasi Desa)** adalah aplikasi mobile berbasis Android (Kotlin / Jetpack Compose) yang dirancang untuk mempermudah warga Desa Purwodadi Simpang dalam mengajukan berbagai surat keterangan administrasi secara daring (*online*) serta memantau status verifikasinya secara *real-time* langsung dari ponsel.
 
 ---
 
@@ -32,11 +32,12 @@
 - **Unggah Lampiran:** Mendukung pengambilan foto atau pemilihan berkas surat pengantar RT langsung dari perangkat.
 - **Pelacakan Status Real-Time & Notifikasi:** Memantau progres pengajuan (`Diproses`, `Diterima`, atau `Ditolak`), menerima notifikasi saat status berubah, serta melihat catatan alasan dan mengajukan ulang apabila berkas ditolak.
 - **Manajemen Profil Terpadu:** Pengisian otomatis (*auto-fill*) data kependudukan (NIK, TTL, alamat, pekerjaan, agama, status perkawinan) pada setiap formulir pengajuan.
+- **Bantuan & FAQ:** Panduan lengkap alur pengajuan dan daftar 3 berkas fisik yang wajib dibawa saat pengambilan surat di Balai Desa Purwodadi Simpang.
 
 ### 2. Dashboard Admin Desa
-- **Manajemen Antrean Pengajuan:** Melihat seluruh daftar permohonan warga lengkap dengan filter status dan pengurutan waktu.
+- **Manajemen Antrean Pengajuan:** Melihat seluruh daftar permohonan warga lengkap dengan pencarian nama/jenis surat, filter status, dan pengurutan waktu.
 - **Verifikasi Detail & Lampiran:** Memeriksa kelengkapan data diri pemohon serta pratinjau foto surat pengantar RT.
-- **Keputusan & Pratinjau Surat:** Menerima atau menolak pengajuan dengan alasan yang jelas, memasukkan nomor surat resmi, serta menghasilkan pratinjau cetak dokumen surat.
+- **Keputusan, Pratinjau Cetak & Kirim PDF Otomatis:** Menerima atau menolak pengajuan dengan alasan yang jelas, memasukkan nomor surat resmi, menghasilkan pratinjau/cetak dokumen surat standar A4, serta mengirim otomatis file surat PDF ke email desa.
 
 ---
 
@@ -46,6 +47,7 @@
 - **UI Framework:** Jetpack Compose / Compose Multiplatform (Material Design 3)
 - **Backend & Database:** Firebase Authentication, Cloud Firestore
 - **Autentikasi Pihak Ketiga:** Android Credential Manager & Google Identity Services (Google Sign-In)
+- **Generator Dokumen & Email:** HTML-to-PDF Generator (Android WebView / Print) & SMTP Mailer
 - **Arsitektur & Latar Belakang:** MVVM (`ViewModel` & `StateFlow`), Android Service untuk pemantauan status notifikasi
 
 ---
@@ -55,7 +57,7 @@
 1. Buka halaman [**Releases**](https://github.com/arul-hue/SuDes/releases) pada repositori ini.
 2. Unduh file `.apk` terbaru yang tersedia pada bagian **Assets**.
 3. Buka file APK yang telah diunduh di perangkat Android Anda, lalu izinkan opsi **Instal dari sumber tidak dikenal** (*Install unknown apps*) jika diminta oleh sistem.
-4. Jalankan aplikasi **SuDes**, lakukan pendaftaran akun baru atau masuk menggunakan akun Google, dan lengkapi data diri pada menu **Profil**.
+4. Jalankan aplikasi **SI PANDA**, lakukan pendaftaran akun baru atau masuk menggunakan akun Google, dan lengkapi data diri pada menu **Profil**.
 
 ---
 
